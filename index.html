@@ -8,9 +8,9 @@
 <title>Veli Bilgi Güncelleme</title>
 <script>
 // Sürüm kontrolü: GitHub'a yeni dosya yüklenince tarayıcı önbelleğini atlayıp yeni sürümü açar.
-(function(){var V='14';var u=new URL(location.href);fetch('surum.txt?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.text():''}).then(function(t){t=(t||'').trim();if(!t)return;if(t===V){if(u.searchParams.has('yv')){u.searchParams.delete('yv');u.searchParams.delete('r');history.replaceState(null,'',u.pathname+u.search+u.hash)}return}var once=Number(u.searchParams.get('r')||0);if(u.searchParams.get('yv')===t&&Date.now()-once<60000)return;u.searchParams.set('yv',t);u.searchParams.set('r',Date.now());location.replace(u.href)}).catch(function(){})})();
+(function(){var V='15';var u=new URL(location.href);fetch('surum.txt?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.text():''}).then(function(t){t=(t||'').trim();if(!t)return;if(t===V){if(u.searchParams.has('yv')){u.searchParams.delete('yv');u.searchParams.delete('r');history.replaceState(null,'',u.pathname+u.search+u.hash)}return}var once=Number(u.searchParams.get('r')||0);if(u.searchParams.get('yv')===t&&Date.now()-once<60000)return;u.searchParams.set('yv',t);u.searchParams.set('r',Date.now());location.replace(u.href)}).catch(function(){})})();
 </script>
-<link rel="stylesheet" href="ortak.css?v=14">
+<link rel="stylesheet" href="ortak.css?v=15">
 <style>
   /* ---------- Üst bant ---------- */
   .ust{position:sticky;top:0;z-index:20;background:var(--ana);color:#fff;padding:12px 16px 14px;padding-top:calc(12px + env(safe-area-inset-top))}
@@ -224,7 +224,7 @@
     <div class="tutamak"></div>
     <h3>Öğrenci sınıftan ayrıldı mı?</h3>
     <p class="alt-baslik" id="ayrilAd"></p>
-    <p style="font-size:14px;color:var(--soluk);margin:0 0 16px">Nakil giden, başka şubeye geçen ya da kaydı silinen öğrenciler için işaretleyin. Kayıt silinmez; yönetici “ayrılanlar” listesinde görür. İsterseniz sonra geri alabilirsiniz.</p>
+    <p style="font-size:14px;color:var(--soluk);margin:0 0 16px">Nakil giden, başka şubeye geçen ya da kaydı silinen öğrenciler için işaretleyin. Öğrenci sınıf listenizden çıkar; yönetici “ayrılanlar” listesinde görür. Yanlışlıkla işaretlerseniz “Ayrılan” filtresinden geri alabilirsiniz.</p>
     <div class="dugmeler">
       <button class="btn" data-kapat>Vazgeç</button>
       <button class="btn kirmizi" id="ayrilOnay">Evet, ayrıldı</button>
@@ -249,7 +249,7 @@
 <script type="module">
 import { baglan, OZEL_ADLAR, ozelMi, OKUL_ADI, SUBE_ALANI, TUM_SUBELER, subeAnahtari, subeAdi, subeEposta,
   baslikYap, telTemizle, telGecerli, telGoster, noTemizle, esc, aramaMetni, DURUM, durumHesapla,
-  hataMesaji, tost } from './ortak.js?v=14';
+  hataMesaji, tost } from './ortak.js?v=15';
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { collection, doc, getDoc, getDocs, query, where, updateDoc, addDoc, deleteDoc, serverTimestamp, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
@@ -396,7 +396,7 @@ const sirala = (a, b) => (a.ad || '').localeCompare(b.ad || '', 'tr');
 function sayilar() {
   const c = { tumu: 0, bekliyor: 0, degisen: 0, ayrildi: 0, yeni: 0, dogru: 0, eksik: 0, devamsiz: 0 };
   for (const o of ogrenciler) {
-    c.tumu++;
+    if (o.durum !== 'ayrildi') c.tumu++;   // ayrılanlar sınıf mevcudundan sayılmaz
     if (o.durum === 'bekliyor') c.bekliyor++;
     if (o.durum === 'duzeltildi') c.degisen++;
     if (o.durum === 'ayrildi') c.ayrildi++;
@@ -413,7 +413,7 @@ function ciz() {
   $('ustOgretmen').textContent = sube.ogretmen || (subeAdi(sk) + ' Şubesi');
   $('ustOkul').textContent = OKUL_ADI;
   const c = sayilar();
-  const mevcut = ogrenciler.filter(o => o.durum !== 'yeni').length;
+  const mevcut = ogrenciler.filter(o => o.durum !== 'yeni' && o.durum !== 'ayrildi').length;
   const kontrol = mevcut - c.bekliyor;
   const yuzde = mevcut ? Math.round(kontrol / mevcut * 100) : 100;
   $('ilerlemeYazi').textContent = `${kontrol} / ${mevcut} öğrenci kontrol edildi`;
@@ -445,6 +445,7 @@ function ciz() {
   // liste
   const q = aramaMetni(arama);
   let l = ogrenciler.filter(o => {
+    if (filtre === 'tumu' && o.durum === 'ayrildi') return false;   // ayrılanlar yalnızca "Ayrılan" filtresinde görünür
     if (filtre === 'bekliyor' && o.durum !== 'bekliyor') return false;
     if (filtre === 'degisen' && o.durum !== 'duzeltildi') return false;
     if (filtre === 'ayrildi' && o.durum !== 'ayrildi') return false;
@@ -459,7 +460,7 @@ function ciz() {
   document.querySelectorAll('.gorunum button').forEach(b => b.classList.toggle('secili', b.dataset.g === gorunum));
   if (!l.length) { $('liste').innerHTML = `<div class="bos">${filtre === 'bekliyor' && !q ? '🎉 Kontrol bekleyen öğrenci kalmadı.' : 'Bu listede öğrenci yok.'}</div>`; return; }
   $('liste').innerHTML = gorunum === 'liste'
-    ? `<div class="isim-liste"><div class="isim-ust"><span>${l.length} öğrenci · dokunarak işlem yapın</span><button class="btn kucuk" id="isimKopyala">Listeyi kopyala</button></div>${l.map((o, i) => isimSatir(o, i)).join('')}</div>`
+    ? `<div class="isim-liste"><div class="isim-ust"><span>${l.length} öğrenci${filtre === 'ayrildi' ? ' (ayrılan)' : ''} · dokunarak işlem yapın</span><button class="btn kucuk" id="isimKopyala">Listeyi kopyala</button></div>${l.map((o, i) => isimSatir(o, i)).join('')}</div>`
     : l.map(o => kart(o, kilitli)).join('');
   $('isimKopyala')?.addEventListener('click', () => kopyalaMetin(l.filter(o => o.durum !== 'ayrildi').map((o, i) => `${i + 1}. ${o.ad}${o.no ? ' (' + o.no + ')' : ''}`).join('\n')));
 }
@@ -590,7 +591,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') document.que
 $('ayrilOnay').onclick = () => {
   kapat('perdeAyril');
   const o = aktif;
-  guncelle(o, { durum: 'ayrildi', oncekiDurum: o.durum }, `${o.ad} ayrıldı olarak işaretlendi`);
+  guncelle(o, { durum: 'ayrildi', oncekiDurum: o.durum }, `${o.ad} listeden çıkarıldı. “Ayrılan” filtresinden geri alabilirsiniz.`);
 };
 
 function alanHata(id, m) {
@@ -681,7 +682,7 @@ $('tamamlaBtn').onclick = () => {
   const c = sayilar();
   $('tamamOzet').innerHTML = [
     ['✓ Bilgisi doğru', c.dogru], ['✎ Düzeltilen', c.degisen], ['✗ Ayrılan', c.ayrildi], ['＋ Yeni gelen', c.yeni],
-    ['Güncel mevcut', c.tumu - c.ayrildi], ...(c.devamsiz ? [['⏸ Sürekli devamsız', c.devamsiz]] : []), ...(c.eksik ? [['⚠ Eksik bilgisi olan', c.eksik]] : [])
+    ['Güncel mevcut', c.tumu], ...(c.devamsiz ? [['⏸ Sürekli devamsız', c.devamsiz]] : []), ...(c.eksik ? [['⚠ Eksik bilgisi olan', c.eksik]] : [])
   ].map(([a, n]) => `<tr><td>${a}</td><td>${n}</td></tr>`).join('');
   ac('perdeTamam');
 };

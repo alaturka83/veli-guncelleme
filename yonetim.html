@@ -8,9 +8,9 @@
 <title>Veli Bilgileri · Yönetim</title>
 <script>
 // Sürüm kontrolü: GitHub'a yeni dosya yüklenince tarayıcı önbelleğini atlayıp yeni sürümü açar.
-(function(){var V='14';var u=new URL(location.href);fetch('surum.txt?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.text():''}).then(function(t){t=(t||'').trim();if(!t)return;if(t===V){if(u.searchParams.has('yv')){u.searchParams.delete('yv');u.searchParams.delete('r');history.replaceState(null,'',u.pathname+u.search+u.hash)}return}var once=Number(u.searchParams.get('r')||0);if(u.searchParams.get('yv')===t&&Date.now()-once<60000)return;u.searchParams.set('yv',t);u.searchParams.set('r',Date.now());location.replace(u.href)}).catch(function(){})})();
+(function(){var V='15';var u=new URL(location.href);fetch('surum.txt?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.text():''}).then(function(t){t=(t||'').trim();if(!t)return;if(t===V){if(u.searchParams.has('yv')){u.searchParams.delete('yv');u.searchParams.delete('r');history.replaceState(null,'',u.pathname+u.search+u.hash)}return}var once=Number(u.searchParams.get('r')||0);if(u.searchParams.get('yv')===t&&Date.now()-once<60000)return;u.searchParams.set('yv',t);u.searchParams.set('r',Date.now());location.replace(u.href)}).catch(function(){})})();
 </script>
-<link rel="stylesheet" href="ortak.css?v=14">
+<link rel="stylesheet" href="ortak.css?v=15">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <style>
@@ -296,7 +296,7 @@
           <input class="girdi ara" id="oAra" type="search" placeholder="Ad, veli, numara ya da telefon ara">
           <select id="oSube"></select>
           <select id="oDurum">
-            <option value="">Tüm durumlar</option>
+            <option value="">Tüm öğrenciler (ayrılanlar hariç)</option>
             <option value="bekliyor">Kontrol bekliyor</option>
             <option value="dogru">Doğrulandı</option>
             <option value="duzeltildi">Düzeltildi</option>
@@ -455,7 +455,7 @@
 <script type="module">
 import { baglan, ozelAdlariTanit, ozelAnahtarBul, ozelMi, OZEL_ADLAR, firebaseConfig, OKUL_ADI, SUBE_ALANI, TUM_SUBELER, subeAnahtari, subeAdi, subeExcel, subeSira, subeEposta,
   baslikYap, telTemizle, telGecerli, telGoster, noTemizle, esc, aramaMetni, DURUM, durumHesapla, degisenAlanlar,
-  sifreUret, hataMesaji, tost, tarihGoster } from './ortak.js?v=14';
+  sifreUret, hataMesaji, tost, tarihGoster } from './ortak.js?v=15';
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged, initializeAuth, inMemoryPersistence,
   createUserWithEmailAndPassword, updatePassword } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
@@ -683,6 +683,7 @@ function oFiltrele() {
   const q = aramaMetni($('oAra').value), sk = $('oSube').value, d = $('oDurum').value;
   return ogrenciler.filter(o => {
     if (sk && o.sk !== sk) return false;
+    if (!d && o.durum === 'ayrildi') return false;   // ayrılanlar yalnızca "Ayrıldı" filtresinde
     if (d === 'eksik' ? !eksikMi(o) : d === 'devamsiz' ? !devamsizMi(o) : (d && o.durum !== d)) return false;
     if (q && !aramaMetni(`${o.ad} ${o.veli} ${o.no} ${o.tel} ${o.orj?.tel || ''}`).includes(q)) return false;
     return true;
@@ -737,6 +738,10 @@ $('oIndir').onclick = async () => {
         durumlar: l.map(o => o.durum),
         renk: sk[0] === '0' ? 'FFF59E0B' : sk[0] === '5' ? 'FF64748B' : ['', 'FF0EA5E9', 'FF10B981', 'FF8B5CF6', 'FFEF4444'][sk[0]],
       });
+      const ayr = !d ? ogrenciler.filter(o => o.sk === sk && o.durum === 'ayrildi').sort((x, y) => (x.ad || '').localeCompare(y.ad || '', 'tr')) : [];
+      if (ayr.length) xSayfa(wb, 'Ayrılanlar', { baslik: `${subeAdi(sk)} · Ayrılan Öğrenciler`, alt: `${ayr.length} öğrenci   ·   Sınıf listesinde yer almazlar.`, renk: 'FFB42318',
+        kolonlar: [{ h: 'Sıra', w: 6, orta: 1 }, { h: 'Okul No', w: 11, orta: 1 }, { h: 'Öğrenci Ad Soyad', w: 30 }, { h: 'Veli Ad Soyad', w: 28, eksik: 1 }, { h: 'Telefon', w: 20, fmt: XTEL, eksik: 1 }, { h: 'İşaretlenme', w: 15, orta: 1 }],
+        satirlar: ayr.map((o, i) => [i + 1, noSayi(o.no), o.ad, o.veli, telSayi(o.tel), tarihGoster(o.guncel)]) });
     } else {
       xSayfa(wb, 'Öğrenci Listesi', {
         baslik: `${OKUL_ADI} · Öğrenci Listesi`,
@@ -1388,7 +1393,9 @@ async function excelIndir(onEk = 'Veli_Iletisim') {
     const bes = [{ h: 'Sınıf', w: 9, orta: 1, kalin: 1 }, { h: 'Okul No', w: 11, orta: 1 }, { h: 'Öğrenci', w: 30 }, { h: 'Veli', w: 28, eksik: 1 }, { h: 'Telefon', w: 20, fmt: XTEL, eksik: 1 }];
     const satir5 = o => [subeExcel(o.sk), noSayi(o.no), o.ad, o.veli, telSayi(o.tel)];
     const ayr = sirali(ogrenciler.filter(o => o.durum === 'ayrildi'));
-    xSayfa(wb, 'Ayrılanlar', { baslik: 'Sınıftan Ayrılan Öğrenciler', alt: `${ayr.length} öğrenci`, renk: 'FFB42318', kolonlar: bes, satirlar: ayr.map(satir5) });
+    xSayfa(wb, 'Ayrılanlar', { baslik: 'Sınıftan Ayrılan Öğrenciler', alt: `${ayr.length} öğrenci   ·   Bu öğrenciler sınıf listelerinde ve Genel Liste’de yer almaz.`, renk: 'FFB42318',
+      kolonlar: [...bes, { h: 'Şube Öğretmeni', w: 24 }, { h: 'İşaretlenme', w: 15, orta: 1 }],
+      satirlar: ayr.map(o => [...satir5(o), subeler[o.sk]?.ogretmen || '', tarihGoster(o.guncel)]) });
     const yen = sirali(ogrenciler.filter(o => o.durum === 'yeni'));
     xSayfa(wb, 'Yeni Gelenler', { baslik: 'Yeni Gelen Öğrenciler', alt: `${yen.length} öğrenci`, renk: 'FF6D28D9', kolonlar: bes, satirlar: yen.map(satir5) });
     const eks = sirali(ogrenciler.filter(eksikMi));
