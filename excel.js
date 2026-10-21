@@ -1,5 +1,5 @@
 // Biçimli Excel çıktıları — yönetici paneli ve öğretmen ekranı birlikte kullanır (aynı biçim).
-import { OKUL_ADI, subeAdi, ozelMi, tarihGoster } from './ortak.js?v=20';
+import { OKUL_ADI, subeAdi, ozelMi, tarihGoster } from './ortak.js?v=21';
 
 export const devamsizMi = o => o.durum !== 'ayrildi' && !!o.devamsiz;
 export const devamsizMetni = o => devamsizMi(o) ? 'Sürekli devamsız' + (o.devamsizNot ? ' – ' + o.devamsizNot : '') : '';

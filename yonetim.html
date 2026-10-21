@@ -8,9 +8,9 @@
 <title>Veli Bilgileri · Yönetim</title>
 <script>
 // Sürüm kontrolü: GitHub'a yeni dosya yüklenince tarayıcı önbelleğini atlayıp yeni sürümü açar.
-(function(){var V='20';var u=new URL(location.href);fetch('surum.txt?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.text():''}).then(function(t){t=(t||'').trim();if(!t)return;if(t===V){if(u.searchParams.has('yv')){u.searchParams.delete('yv');u.searchParams.delete('r');history.replaceState(null,'',u.pathname+u.search+u.hash)}return}var once=Number(u.searchParams.get('r')||0);if(u.searchParams.get('yv')===t&&Date.now()-once<60000)return;u.searchParams.set('yv',t);u.searchParams.set('r',Date.now());location.replace(u.href)}).catch(function(){})})();
+(function(){var V='21';var u=new URL(location.href);fetch('surum.txt?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.text():''}).then(function(t){t=(t||'').trim();if(!t)return;if(t===V){if(u.searchParams.has('yv')){u.searchParams.delete('yv');u.searchParams.delete('r');history.replaceState(null,'',u.pathname+u.search+u.hash)}return}var once=Number(u.searchParams.get('r')||0);if(u.searchParams.get('yv')===t&&Date.now()-once<60000)return;u.searchParams.set('yv',t);u.searchParams.set('r',Date.now());location.replace(u.href)}).catch(function(){})})();
 </script>
-<link rel="stylesheet" href="ortak.css?v=20">
+<link rel="stylesheet" href="ortak.css?v=21">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <style>
@@ -36,7 +36,10 @@
 
   /* İstatistik kartları */
   .istat{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
-  .istat div{background:#fff;border-radius:var(--r);box-shadow:var(--golge);padding:14px 16px}
+  .istat>button{background:#fff;border:0;text-align:left;cursor:pointer;border-radius:var(--r);box-shadow:var(--golge);padding:14px 16px;transition:transform .1s,box-shadow .15s}
+  .istat>button:hover{box-shadow:0 4px 14px rgba(16,24,40,.12)}
+  .istat>button:active{transform:scale(.97)}
+  .istat .kisa{display:none}
   .istat b{display:block;font-size:26px;line-height:1.1;font-variant-numeric:tabular-nums}
   .istat span{font-size:13px;color:var(--soluk);font-weight:600}
   .istat .yesil b{color:var(--yesil)} .istat .mavi b{color:var(--mavi)} .istat .kirmizi b{color:var(--kirmizi)} .istat .mor b{color:var(--mor)} .istat .sari b{color:var(--sari)} .istat .turuncu b{color:#c2410c}
@@ -165,16 +168,23 @@
     .nokta-say:empty{display:none}
 
     /* Pano */
-    .istat{grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
-    .istat div{padding:11px 13px;border-radius:12px}
-    .istat b{font-size:22px}
-    .istat span{font-size:12px}
+    .istat{grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px}
+    .istat>button{padding:8px 4px 7px;border-radius:10px;text-align:center}
+    .istat b{font-size:17px;line-height:1.15}
+    .istat span{font-size:10.5px;line-height:1.2;display:block;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .istat .uzun{display:none}
+    .istat .kisa{display:inline}
     .sinif-satir{grid-template-columns:1fr;gap:6px;margin-bottom:14px}
     .sinif-etiket{text-align:left;padding:0}
-    .karolar{grid-template-columns:repeat(3,1fr);gap:6px}
-    .karo{padding:8px}
-    .karo .ks b{font-size:15px}
-    .karo .ko{font-size:11px}
+    .karolar{grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
+    .karo{min-width:0}
+    .karo{padding:6px 7px;border-radius:10px}
+    .karo .ks b{font-size:14px}
+    .karo .ks .rozet{font-size:10px;padding:1px 5px}
+    .karo .ko{font-size:10.5px;margin:1px 0 4px}
+    .karo .kc{height:4px}
+    .sinif-satir{margin-bottom:10px}
+    .sinif-etiket{font-size:12px}
     .lejant{gap:10px}
 
     /* Filtreler */
@@ -473,8 +483,8 @@
 <script type="module">
 import { baglan, ozelAdlariTanit, ozelAnahtarBul, ozelMi, OZEL_ADLAR, firebaseConfig, OKUL_ADI, SUBE_ALANI, TUM_SUBELER, subeAnahtari, subeAdi, subeExcel, subeSira, subeEposta,
   baslikYap, telTemizle, telGecerli, telGoster, noTemizle, esc, aramaMetni, DURUM, durumHesapla, degisenAlanlar,
-  sifreUret, hataMesaji, tost, tarihGoster } from './ortak.js?v=20';
-import { bugun, telSayi, excelJSYukle, XR, XDURUM, XTEL, sayfaAdi, noSayi, dolgu, xSayfa, subeSayfalari, subeRengi, excelKaydet } from './excel.js?v=20';
+  sifreUret, hataMesaji, tost, tarihGoster } from './ortak.js?v=21';
+import { bugun, telSayi, excelJSYukle, XR, XDURUM, XTEL, sayfaAdi, noSayi, dolgu, xSayfa, subeSayfalari, subeRengi, excelKaydet } from './excel.js?v=21';
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged, initializeAuth, inMemoryPersistence,
   createUserWithEmailAndPassword, updatePassword } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
@@ -636,15 +646,17 @@ function cizPano(g) {
   const kurulmamis = !Object.keys(subeler).length || !ogrenciler.length;
   $('kurulumUyari').innerHTML = kurulmamis
     ? `<div class="bilgi-kutu" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><span>Sistem henüz kurulmamış. Önce şubeleri oluşturun ve Excel listesini içe aktarın.</span><button class="btn kucuk ana" onclick="document.querySelector('[data-s=kurulum]').click()">Kuruluma git</button></div>` : '';
-  $('istat').innerHTML = `
-    <div class="yesil"><b>${g.tamamSube} / ${g.subeSayi}</b><span>Şube tamamladı</span></div>
-    <div><b>%${g.yuzde}</b><span>Öğrenci kontrol edildi</span></div>
-    <div><b>${g.toplam - g.ayrildi}</b><span>Güncel öğrenci</span></div>
-    <div class="mavi"><b>${g.duzeltildi}</b><span>Bilgisi düzeltilen</span></div>
-    <div class="kirmizi"><b>${g.ayrildi}</b><span>Ayrılan</span></div>
-    <div class="mor"><b>${g.yeni}</b><span>Yeni gelen</span></div>
-    <div class="sari"><b>${g.eksik}</b><span>Eksik bilgili</span></div>
-    <div class="turuncu"><b>${g.devamsiz}</b><span>Sürekli devamsız</span></div>`;
+  // Her kutu ilgili listeye götürür; telefonda kısa etiket gösterilir
+  const kutu = (renk, deger, uzun, kisa, git) => `<button type="button" class="${renk}" data-git="${git}"><b>${deger}</b><span><span class="uzun">${uzun}</span><span class="kisa">${kisa}</span></span></button>`;
+  $('istat').innerHTML =
+    kutu('yesil', `${g.tamamSube}/${g.subeSayi}`, 'Şube tamamladı', 'Tamamlanan', 'sube') +
+    kutu('', `%${g.yuzde}`, 'Öğrenci kontrol edildi', 'Kontrol', 'o:bekliyor') +
+    kutu('', g.toplam - g.ayrildi, 'Güncel öğrenci', 'Öğrenci', 'o:') +
+    kutu('mavi', g.duzeltildi, 'Bilgisi düzeltilen', 'Düzeltilen', 'd:duzeltildi') +
+    kutu('kirmizi', g.ayrildi, 'Ayrılan', 'Ayrılan', 'd:ayrildi') +
+    kutu('mor', g.yeni, 'Yeni gelen', 'Yeni', 'd:yeni') +
+    kutu('sari', g.eksik, 'Eksik bilgili', 'Eksik', 'o:eksik') +
+    kutu('turuncu', g.devamsiz, 'Sürekli devamsız', 'Devamsız', 'd:devamsiz');
 
   const sk = tumSkler();
   $('karolar').innerHTML = ['0','1','2','3','4','5'].map(sinif => {
@@ -686,6 +698,14 @@ $('karolar').addEventListener('click', e => {
   if ($('oSube').options.length < 2) $('oSube').innerHTML = subeSecenekleri('Tüm şubeler');
   $('oSube').value = b.dataset.sk; $('oDurum').value = ''; $('oAra').value = ''; oLimit = 400;
   sekmeAc('ogrenci');
+});
+$('istat').addEventListener('click', e => {
+  const b = e.target.closest('[data-git]'); if (!b) return;
+  const [t, v] = b.dataset.git.split(':');
+  if (t === 'sube') return sekmeAc('sube');
+  if (t === 'd') { dTur = v; return sekmeAc('degisim'); }
+  if ($('oSube').options.length < 2) $('oSube').innerHTML = subeSecenekleri('Tüm şubeler');
+  $('oSube').value = ''; $('oDurum').value = v || ''; $('oAra').value = ''; oLimit = 400; sekmeAc('ogrenci');
 });
 $('uyarilar').addEventListener('click', e => {
   const a = e.target.closest('[data-git]'); if (!a) return; e.preventDefault();
