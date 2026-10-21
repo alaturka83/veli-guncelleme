@@ -8,9 +8,9 @@
 <title>Veli Bilgileri · Yönetim</title>
 <script>
 // Sürüm kontrolü: GitHub'a yeni dosya yüklenince tarayıcı önbelleğini atlayıp yeni sürümü açar.
-(function(){var V='5';fetch('surum.txt?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.text():''}).then(function(t){t=(t||'').trim();if(!t||t===V)return;var k='surum-'+t;try{if(sessionStorage.getItem(k))return;sessionStorage.setItem(k,'1')}catch(e){}var u=new URL(location.href);u.searchParams.set('v',t);location.replace(u.href)}).catch(function(){})})();
+(function(){var V='6';fetch('surum.txt?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.text():''}).then(function(t){t=(t||'').trim();if(!t||t===V)return;var k='surum-'+t;try{if(sessionStorage.getItem(k))return;sessionStorage.setItem(k,'1')}catch(e){}var u=new URL(location.href);u.searchParams.set('v',t);location.replace(u.href)}).catch(function(){})})();
 </script>
-<link rel="stylesheet" href="ortak.css?v=5">
+<link rel="stylesheet" href="ortak.css?v=6">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <style>
@@ -332,7 +332,7 @@
 <script type="module">
 import { baglan, firebaseConfig, OKUL_ADI, SUBE_ALANI, TUM_SUBELER, subeAnahtari, subeAdi, subeExcel, subeSira, subeEposta,
   baslikYap, telTemizle, telGecerli, telGoster, noTemizle, esc, aramaMetni, DURUM, durumHesapla, degisenAlanlar,
-  sifreUret, hataMesaji, tost, tarihGoster } from './ortak.js?v=5';
+  sifreUret, hataMesaji, tost, tarihGoster } from './ortak.js?v=6';
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged, initializeAuth, inMemoryPersistence,
   createUserWithEmailAndPassword, updatePassword } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
@@ -848,7 +848,7 @@ $('excelDosya').addEventListener('change', async e => {
   const f = e.target.files[0]; if (!f) return;
   try {
     const wb = XLSX.read(await f.arrayBuffer(), { type: 'array' });
-    const ws = wb.Sheets[wb.SheetNames[0]];
+    const ws = wb.Sheets['Genel Liste'] || wb.Sheets[wb.SheetNames[0]];   // bu sistemin kendi Excel'i de geri yüklenebilir
     const satirlar = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: '' });
     const kayit = []; let baslik = 0;
     const tanimsiz = {};   // sistemde olmayan şubelerin öğrencileri: etiket → sayı (aktarılmaz)
@@ -929,32 +929,174 @@ $('tamamSifirla').onclick = () => onayIste('Tüm şubelerin “tamamlandı” i�
 function bugun() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
 const sirali = l => [...l].sort((a, b) => subeSira(a.sk, b.sk) || (a.ad || '').localeCompare(b.ad || '', 'tr'));
 const telSayi = t => t ? Number(t) : '';
-$('excelBtn').onclick = () => {
-  const wb = XLSX.utils.book_new();
-  const ekle = (ad, aoa, gen) => { const ws = XLSX.utils.aoa_to_sheet(aoa); ws['!cols'] = gen.map(w => ({ wch: w })); XLSX.utils.book_append_sheet(wb, ws, ad); return ws; };
+// ---- Biçimli Excel (ExcelJS, ilk tıklamada yüklenir) ----
+let excelJSYukleniyor = null;
+function excelJSYukle() {
+  if (window.ExcelJS) return Promise.resolve();
+  return excelJSYukleniyor ||= new Promise((ok, hata) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js';
+    s.onload = ok; s.onerror = () => { excelJSYukleniyor = null; hata(new Error('Excel kütüphanesi yüklenemedi')); };
+    document.head.appendChild(s);
+  });
+}
+const XR = { lacivert: 'FF1F3864', baslikAlt: 'FF2E4A7D', zebra: 'FFF4F6FA', cizgi: 'FFC9D2E0', soluk: 'FF5F6B7A', sari: 'FFB45309', beyaz: 'FFFFFFFF' };
+const XDURUM = {
+  bekliyor: ['FFF1F3F5', 'FF5F6B7A', 'Bekliyor'], dogru: ['FFE6F4EA', 'FF1E7B34', 'Doğru'], duzeltildi: ['FFE8F0FE', 'FF1A56DB', 'Düzeltildi'],
+  ayrildi: ['FFFDECEC', 'FFB42318', 'Ayrıldı'], yeni: ['FFF1EAFE', 'FF6D28D9', 'Yeni kayıt'],
+  tamam: ['FFE6F4EA', 'FF1E7B34'], devam: ['FFE8F0FE', 'FF1A56DB'], baslamadi: ['FFF1F3F5', 'FF5F6B7A'],
+};
+const XINCE = { style: 'thin', color: { argb: XR.cizgi } };
+const XKENAR = { top: XINCE, left: XINCE, bottom: XINCE, right: XINCE };
+const XTEL = '"0 ("000") "000" "00" "00';          // 5355733013 → 0 (535) 573 30 13
+const sayfaAdi = sk => subeAdi(sk).replace('/', '-');
+const noSayi = n => /^\d+$/.test(n || '') ? Number(n) : (n || '');
+const dolgu = argb => ({ type: 'pattern', pattern: 'solid', fgColor: { argb } });
 
-  const guncel = sirali(ogrenciler.filter(o => o.durum !== 'ayrildi'));
-  const ws1 = ekle('Güncel Liste', [['OKUL TELEFON LİSTESİ'], ['Sınıf', 'Okul Numarası', 'Öğrenci Ad Soyad', 'Veli Ad Soyad', 'Telefon Numarası'],
-    ...guncel.map(o => [subeExcel(o.sk), o.no, o.ad, o.veli, telSayi(o.tel)])], [7, 14, 30, 30, 16]);
-  ws1['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 4 } }];
+/** Başlıklı, kenarlıklı, zebra satırlı standart tablo sayfası */
+function xSayfa(wb, ad, { baslik, alt, kolonlar, satirlar, durumlar, toplam, yatay, renk }) {
+  const n = kolonlar.length;
+  const ws = wb.addWorksheet(ad, {
+    properties: { tabColor: { argb: renk || XR.lacivert } },
+    views: [{ state: 'frozen', ySplit: 3, showGridLines: false }],
+    pageSetup: { paperSize: 9, orientation: yatay ? 'landscape' : 'portrait', fitToPage: true, fitToWidth: 1, fitToHeight: 0,
+      margins: { left: 0.4, right: 0.4, top: 0.5, bottom: 0.55, header: 0.25, footer: 0.25 }, printTitlesRow: '3:3', horizontalCentered: true },
+    headerFooter: { oddFooter: `&L&8${OKUL_ADI}&C&8${ad}&R&8Sayfa &P / &N` },
+  });
+  ws.columns = kolonlar.map(k => ({ width: k.w }));
+  ws.mergeCells(1, 1, 1, n);
+  Object.assign(ws.getCell(1, 1), { value: baslik, font: { name: 'Calibri', bold: true, size: 15, color: { argb: XR.lacivert } }, alignment: { vertical: 'middle' } });
+  ws.getRow(1).height = 26;
+  ws.mergeCells(2, 1, 2, n);
+  Object.assign(ws.getCell(2, 1), { value: alt, font: { name: 'Calibri', size: 10, color: { argb: XR.soluk } }, alignment: { vertical: 'top' } });
+  ws.getRow(2).height = 20;
+  const hr = ws.getRow(3); hr.height = kolonlar.some(k => k.h.length > 11 && k.w < 12) ? 32 : 24;
+  kolonlar.forEach((k, i) => Object.assign(hr.getCell(i + 1), {
+    value: k.h, font: { name: 'Calibri', bold: true, size: 11, color: { argb: XR.beyaz } }, fill: dolgu(XR.lacivert), border: XKENAR,
+    alignment: { vertical: 'middle', horizontal: k.orta ? 'center' : 'left', wrapText: true, indent: k.orta ? 0 : 1 },
+  }));
+  satirlar.forEach((s, ri) => {
+    const r = ws.getRow(4 + ri); r.height = 19;
+    s.forEach((v, i) => {
+      const k = kolonlar[i], c = r.getCell(i + 1);
+      const bos = v === '' || v == null;
+      c.value = bos ? null : v;      // boş hücre boş kalır (yeniden içe aktarmada sorun çıkmasın), sarıyla işaretlenir
+      c.font = { name: 'Calibri', size: 11, ...(k.kalin ? { bold: true } : {}), ...(k.vurgu && !bos ? { bold: true, color: { argb: 'FF1A56DB' } } : {}) };
+      if (k.fmt && !bos) c.numFmt = k.fmt;
+      if (bos && k.eksik) c.fill = dolgu('FFFFF1D6');
+      else if (ri % 2) c.fill = dolgu(XR.zebra);
+      c.border = XKENAR;
+      c.alignment = { vertical: 'middle', horizontal: k.orta ? 'center' : 'left', indent: k.orta ? 0 : 1 };
+    });
+    const d = durumlar?.[ri];
+    const di = kolonlar.findIndex(k => k.durum);
+    if (d && di >= 0 && XDURUM[d]) {
+      const c = r.getCell(di + 1);
+      c.fill = dolgu(XDURUM[d][0]); c.font = { name: 'Calibri', bold: true, size: 10, color: { argb: XDURUM[d][1] } };
+      c.alignment = { vertical: 'middle', horizontal: 'center' };
+    }
+  });
+  let son = 3 + satirlar.length;
+  if (!satirlar.length) {
+    son = 4; ws.mergeCells(4, 1, 4, n);
+    Object.assign(ws.getCell(4, 1), { value: 'Kayıt yok', font: { name: 'Calibri', italic: true, color: { argb: XR.soluk } }, alignment: { horizontal: 'center', vertical: 'middle' }, border: XKENAR });
+    ws.getRow(4).height = 24;
+  } else ws.autoFilter = { from: { row: 3, column: 1 }, to: { row: son, column: n } };
+  if (toplam) {
+    const r = ws.getRow(son + 1); r.height = 21;
+    toplam.forEach((v, i) => Object.assign(r.getCell(i + 1), {
+      value: v === '' ? null : v, font: { name: 'Calibri', bold: true, size: 11, color: { argb: XR.beyaz } }, fill: dolgu(XR.baslikAlt), border: XKENAR,
+      alignment: { vertical: 'middle', horizontal: kolonlar[i].orta ? 'center' : 'left', indent: kolonlar[i].orta ? 0 : 1 },
+    }));
+  }
+  return ws;
+}
 
-  const deg = sirali(ogrenciler.filter(o => o.durum === 'duzeltildi'));
-  const adlar = { sk: 'Şube', no: 'Okul No', ad: 'Ad', veli: 'Veli', tel: 'Telefon' };
-  ekle('Değişiklikler', [['Şube', 'Okul No', 'Öğrenci', 'Değişen', 'Eski Veli', 'Yeni Veli', 'Eski Telefon', 'Yeni Telefon', 'Eski Şube', 'Eski Okul No', 'Eski Ad'],
-    ...deg.map(o => [subeExcel(o.sk), o.no, o.ad, degisenAlanlar(o).map(a => adlar[a]).join(', '), o.orj?.veli || '', o.veli, telSayi(o.orj?.tel), telSayi(o.tel),
-      o.orj?.sk && o.orj.sk !== o.sk ? subeExcel(o.orj.sk) : '', o.orj && o.orj.no !== o.no ? o.orj.no : '', o.orj && o.orj.ad !== o.ad ? o.orj.ad : ''])], [7, 10, 28, 18, 26, 26, 14, 14, 9, 11, 26]);
+$('excelBtn').onclick = async () => {
+  const btn = $('excelBtn'); const eski = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Hazırlanıyor…';
+  try {
+    await excelJSYukle();
+    const wb = new ExcelJS.Workbook();
+    wb.creator = OKUL_ADI; wb.created = new Date();
+    const tarih = new Date().toLocaleString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    const g = genelOzet();
+    const skler = tumSkler();
+    const aktifler = sirali(ogrenciler.filter(o => o.durum !== 'ayrildi'));
 
-  const satir = o => [subeExcel(o.sk), o.no, o.ad, o.veli, telSayi(o.tel)];
-  ekle('Ayrılanlar', [['Şube', 'Okul No', 'Öğrenci', 'Veli', 'Telefon'], ...sirali(ogrenciler.filter(o => o.durum === 'ayrildi')).map(satir)], [7, 10, 28, 28, 14]);
-  ekle('Yeni Gelenler', [['Şube', 'Okul No', 'Öğrenci', 'Veli', 'Telefon'], ...sirali(ogrenciler.filter(o => o.durum === 'yeni')).map(satir)], [7, 10, 28, 28, 14]);
-  ekle('Eksik Bilgi', [['Şube', 'Okul No', 'Öğrenci', 'Veli', 'Telefon', 'Eksik'],
-    ...sirali(ogrenciler.filter(eksikMi)).map(o => [...satir(o), [!o.veli && 'Veli adı', !o.tel && 'Telefon'].filter(Boolean).join(', ')])], [7, 10, 28, 28, 14, 18]);
-  ekle('Şube Durumu', [['Şube', 'Öğretmen', 'Güncel Mevcut', 'Kontrol Edilen', 'Bekleyen', 'Düzeltilen', 'Ayrılan', 'Yeni', 'Eksik Bilgi', 'Durum', 'Tamamlanma'],
-    ...tumSkler().map(sk => { const r = subeOzet(sk); const s = subeler[sk] || {};
-      return [subeExcel(sk), s.ogretmen || '', r.guncel, r.kontrol, r.bekliyor, r.duzeltildi, r.ayrildi, r.yeni, r.eksik,
-        r.durum === 'tamam' ? 'Tamamlandı' : r.durum === 'devam' ? `Devam (%${r.yuzde})` : 'Başlamadı', s.tamamlandi ? tarihGoster(s.tamamTarih) : '']; })],
-    [7, 24, 13, 14, 10, 11, 9, 7, 11, 14, 16]);
-  XLSX.writeFile(wb, `Veli_Telefon_Guncel_${bugun()}.xlsx`);
+    // 1) ÖZET
+    const ozetSatir = skler.map(sk => {
+      const r = subeOzet(sk), s = subeler[sk] || {};
+      return { r, v: [{ text: subeAdi(sk), hyperlink: `#'${sayfaAdi(sk)}'!A1` }, s.ogretmen || '', r.guncel, r.kontrol, r.bekliyor, r.duzeltildi, r.ayrildi, r.yeni, r.eksik,
+        r.durum === 'tamam' ? 'Tamamlandı' : r.durum === 'devam' ? `Devam · %${r.yuzde}` : 'Başlamadı', s.tamamlandi ? tarihGoster(s.tamamTarih) : ''] };
+    });
+    const top = k => ozetSatir.reduce((a, x) => a + (x.r[k] || 0), 0);
+    const wsO = xSayfa(wb, 'Özet', {
+      baslik: `${OKUL_ADI} · Veli İletişim Bilgileri Güncelleme Raporu`,
+      alt: `Rapor tarihi: ${tarih}   ·   Tamamlayan şube: ${g.tamamSube} / ${g.subeSayi}   ·   Kontrol oranı: %${g.yuzde}   ·   Şube adına tıklayarak o şubenin sayfasına gidebilirsiniz.`,
+      kolonlar: [{ h: 'Şube', w: 9, orta: 1, kalin: 1 }, { h: 'Öğretmen', w: 26 }, { h: 'Güncel Mevcut', w: 10, orta: 1 }, { h: 'Kontrol Edilen', w: 10, orta: 1 },
+        { h: 'Bekleyen', w: 10, orta: 1 }, { h: 'Düzeltilen', w: 11, orta: 1 }, { h: 'Ayrılan', w: 9, orta: 1 }, { h: 'Yeni Gelen', w: 9, orta: 1 },
+        { h: 'Eksik Bilgi', w: 9, orta: 1 }, { h: 'Durum', w: 15, durum: 1 }, { h: 'Tamamlanma', w: 15, orta: 1 }],
+      satirlar: ozetSatir.map(x => x.v), durumlar: ozetSatir.map(x => x.r.durum),
+      toplam: ['TOPLAM', `${skler.length} şube`, top('guncel'), top('kontrol'), top('bekliyor'), top('duzeltildi'), top('ayrildi'), top('yeni'), top('eksik'), `${g.tamamSube} tamamlandı`, ''],
+      yatay: true,
+    });
+    wsO.getColumn(1).eachCell((c, i) => { if (i > 3 && c.value?.hyperlink) c.font = { name: 'Calibri', bold: true, size: 11, color: { argb: 'FF1A56DB' }, underline: true }; });
+
+    // 2) GENEL LİSTE (A–E sütunları içe aktarma biçimiyle aynı)
+    xSayfa(wb, 'Genel Liste', {
+      baslik: `${OKUL_ADI} · Tüm Şubeler Veli İletişim Listesi`,
+      alt: `${aktifler.length} öğrenci   ·   ${tarih}   ·   Ayrılan öğrenciler bu listede yer almaz. Sarı hücreler eksik bilgiyi gösterir.`,
+      kolonlar: [{ h: 'Sınıf', w: 9, orta: 1, kalin: 1 }, { h: 'Okul Numarası', w: 11, orta: 1 }, { h: 'Öğrenci Ad Soyad', w: 30 }, { h: 'Veli Ad Soyad', w: 28, eksik: 1 },
+        { h: 'Telefon Numarası', w: 20, fmt: XTEL, eksik: 1 }, { h: 'Durum', w: 13, durum: 1 }],
+      satirlar: aktifler.map(o => [subeExcel(o.sk), noSayi(o.no), o.ad, o.veli, telSayi(o.tel), XDURUM[o.durum]?.[2] || '']),
+      durumlar: aktifler.map(o => o.durum),
+    });
+
+    // 3) DEĞİŞİKLİKLER / AYRILAN / YENİ / EKSİK
+    const adlar = { sk: 'Şube', no: 'Okul No', ad: 'Ad', veli: 'Veli', tel: 'Telefon' };
+    const deg = sirali(ogrenciler.filter(o => o.durum === 'duzeltildi'));
+    xSayfa(wb, 'Değişiklikler', {
+      baslik: 'Bilgisi Düzeltilen Öğrenciler', alt: `${deg.length} öğrenci   ·   Yeni değerler mavi ve kalın yazılmıştır.`, renk: 'FF1A56DB', yatay: true,
+      kolonlar: [{ h: 'Sınıf', w: 8, orta: 1, kalin: 1 }, { h: 'Okul No', w: 10, orta: 1 }, { h: 'Öğrenci', w: 26 }, { h: 'Değişen', w: 16 },
+        { h: 'Eski Veli', w: 24 }, { h: 'Yeni Veli', w: 24, vurgu: 1 }, { h: 'Eski Telefon', w: 19, fmt: XTEL }, { h: 'Yeni Telefon', w: 19, fmt: XTEL, vurgu: 1 }, { h: 'Eski Sınıf', w: 9, orta: 1 }],
+      satirlar: deg.map(o => [subeExcel(o.sk), noSayi(o.no), o.ad, degisenAlanlar(o).map(a => adlar[a]).join(', '), o.orj?.veli || '', o.veli, telSayi(o.orj?.tel), telSayi(o.tel),
+        o.orj?.sk && o.orj.sk !== o.sk ? subeExcel(o.orj.sk) : '']),
+    });
+    const bes = [{ h: 'Sınıf', w: 9, orta: 1, kalin: 1 }, { h: 'Okul No', w: 11, orta: 1 }, { h: 'Öğrenci', w: 30 }, { h: 'Veli', w: 28, eksik: 1 }, { h: 'Telefon', w: 20, fmt: XTEL, eksik: 1 }];
+    const satir5 = o => [subeExcel(o.sk), noSayi(o.no), o.ad, o.veli, telSayi(o.tel)];
+    const ayr = sirali(ogrenciler.filter(o => o.durum === 'ayrildi'));
+    xSayfa(wb, 'Ayrılanlar', { baslik: 'Sınıftan Ayrılan Öğrenciler', alt: `${ayr.length} öğrenci`, renk: 'FFB42318', kolonlar: bes, satirlar: ayr.map(satir5) });
+    const yen = sirali(ogrenciler.filter(o => o.durum === 'yeni'));
+    xSayfa(wb, 'Yeni Gelenler', { baslik: 'Yeni Gelen Öğrenciler', alt: `${yen.length} öğrenci`, renk: 'FF6D28D9', kolonlar: bes, satirlar: yen.map(satir5) });
+    const eks = sirali(ogrenciler.filter(eksikMi));
+    xSayfa(wb, 'Eksik Bilgi', { baslik: 'Veli Adı veya Telefonu Eksik Öğrenciler', alt: `${eks.length} öğrenci`, renk: XR.sari,
+      kolonlar: [...bes, { h: 'Eksik', w: 18 }], satirlar: eks.map(o => [...satir5(o), [!o.veli && 'Veli adı', !o.tel && 'Telefon'].filter(Boolean).join(', ')]) });
+
+    // 4) HER ŞUBE AYRI SAYFA
+    for (const sk of skler) {
+      const s = subeler[sk] || {}, r = subeOzet(sk);
+      const l = aktifler.filter(o => o.sk === sk);
+      xSayfa(wb, sayfaAdi(sk), {
+        baslik: `${subeAdi(sk)} Şubesi${s.ogretmen ? ' · ' + s.ogretmen : ''}`,
+        alt: `${OKUL_ADI}   ·   Mevcut: ${l.length}   ·   Düzeltilen: ${r.duzeltildi}   ·   Yeni: ${r.yeni}   ·   Ayrılan: ${r.ayrildi}   ·   ${r.durum === 'tamam' ? 'Öğretmen listeyi tamamladı' : 'Öğretmen listeyi henüz tamamlamadı'}`,
+        kolonlar: [{ h: 'Sıra', w: 6, orta: 1 }, { h: 'Okul No', w: 11, orta: 1 }, { h: 'Öğrenci Ad Soyad', w: 30 }, { h: 'Veli Ad Soyad', w: 28, eksik: 1 },
+          { h: 'Telefon', w: 20, fmt: XTEL, eksik: 1 }, { h: 'Durum', w: 13, durum: 1 }],
+        satirlar: l.map((o, i) => [i + 1, noSayi(o.no), o.ad, o.veli, telSayi(o.tel), XDURUM[o.durum]?.[2] || '']),
+        durumlar: l.map(o => o.durum),
+        renk: sk[0] === '0' ? 'FFF59E0B' : ['', 'FF0EA5E9', 'FF10B981', 'FF8B5CF6', 'FFEF4444'][sk[0]],
+      });
+    }
+
+    const buf = await wb.xlsx.writeBuffer();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+    a.download = `Veli_Iletisim_${bugun()}.xlsx`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    tost('Excel hazırlandı', 'tamam');
+  } catch (err) { tost(hataMesaji(err), 'hata'); }
+  finally { btn.disabled = false; btn.textContent = eski; }
 };
 </script>
 </body>
