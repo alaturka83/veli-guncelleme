@@ -8,9 +8,9 @@
 <title>Veli Bilgileri · Yönetim</title>
 <script>
 // Sürüm kontrolü: GitHub'a yeni dosya yüklenince tarayıcı önbelleğini atlayıp yeni sürümü açar.
-(function(){var V='21';var u=new URL(location.href);fetch('surum.txt?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.text():''}).then(function(t){t=(t||'').trim();if(!t)return;if(t===V){if(u.searchParams.has('yv')){u.searchParams.delete('yv');u.searchParams.delete('r');history.replaceState(null,'',u.pathname+u.search+u.hash)}return}var once=Number(u.searchParams.get('r')||0);if(u.searchParams.get('yv')===t&&Date.now()-once<60000)return;u.searchParams.set('yv',t);u.searchParams.set('r',Date.now());location.replace(u.href)}).catch(function(){})})();
+(function(){var V='22';var u=new URL(location.href);fetch('surum.txt?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.text():''}).then(function(t){t=(t||'').trim();if(!t)return;if(t===V){if(u.searchParams.has('yv')){u.searchParams.delete('yv');u.searchParams.delete('r');history.replaceState(null,'',u.pathname+u.search+u.hash)}return}var once=Number(u.searchParams.get('r')||0);if(u.searchParams.get('yv')===t&&Date.now()-once<60000)return;u.searchParams.set('yv',t);u.searchParams.set('r',Date.now());location.replace(u.href)}).catch(function(){})})();
 </script>
-<link rel="stylesheet" href="ortak.css?v=21">
+<link rel="stylesheet" href="ortak.css?v=22">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <style>
@@ -100,6 +100,58 @@
   .anahtar input:checked+i::after{transform:translateX(18px)}
 
   /* Kurulum */
+  /* ---- Kurulum ---- */
+  .kur-ust{margin:0 0 14px}
+  .kur-sayfa{font-size:20px;margin:0 0 2px}
+  .kur-ust p{margin:0}
+  .kur-izgara{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+  .kur-izgara>.kutu{margin-bottom:0}
+  .kur-izgara+.kutu{margin-top:16px}
+  .kur-kart{padding:0;overflow:hidden}
+  .kur-bas{display:flex;align-items:center;gap:12px;padding:15px 18px;border-bottom:1px solid var(--cizgi);background:linear-gradient(180deg,#fbfcfe,#fff)}
+  .kur-ikon{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;flex:none}
+  .kur-ikon svg{width:22px;height:22px}
+  .kur-ikon.mavi{background:var(--ana-acik);color:var(--ana)} .kur-ikon.yesil{background:var(--yesil-acik);color:var(--yesil)}
+  .kur-ikon.mor{background:var(--mor-acik);color:var(--mor)} .kur-ikon.kirmizi{background:var(--kirmizi-acik);color:var(--kirmizi)}
+  .kur-baslik{flex:1;min-width:0}
+  .kur-baslik small{display:block;font-size:10.5px;font-weight:800;letter-spacing:.7px;color:var(--cok-soluk)}
+  .kur-baslik h2{margin:1px 0 0;font-size:16.5px}
+  .kur-govde{padding:16px 18px 18px}
+  .kur-aciklama{margin:0 0 12px;color:var(--soluk);font-size:13.5px;line-height:1.55}
+  .ornekler{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:12px;font-size:12.5px;color:var(--soluk)}
+  .ornekler code{background:#f1f4f9;border:1px solid var(--cizgi);border-radius:6px;padding:2px 7px;font-size:12px;color:var(--yazi)}
+  .liste-bas{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px;font-size:13px;color:var(--soluk);font-weight:600}
+  .kur-dugme{margin-top:12px;min-height:46px}
+  .surukle{display:flex;flex-direction:column;align-items:center;gap:6px;border:2px dashed #c7d2e3;border-radius:14px;padding:28px 16px;text-align:center;background:#f8fafd;cursor:pointer;transition:border-color .15s,background .15s}
+  .surukle:hover,.surukle.ustunde{border-color:var(--ana);background:var(--ana-acik)}
+  .surukle svg{width:34px;height:34px;color:var(--ana)}
+  .surukle b{font-size:14.5px}
+  .surukle small{color:var(--soluk);font-size:12px}
+  .surukle input{display:none}
+  .kur-not{font-size:12.5px;color:var(--soluk);margin-top:10px}
+  .gecis-liste{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+  .gecis-liste>div{display:flex;gap:10px;align-items:flex-start;background:#f8fafd;border:1px solid var(--cizgi);border-radius:12px;padding:12px}
+  .gecis-liste b{display:block;font-size:14px}
+  .gecis-liste small{display:block;color:var(--soluk);font-size:12.5px;line-height:1.45;margin-top:2px}
+  .gl-ikon{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;flex:none;font-size:15px;font-weight:800}
+  .gl-ikon.kirmizi{background:var(--kirmizi-acik);color:var(--kirmizi)} .gl-ikon.mavi{background:var(--ana-acik);color:var(--ana)} .gl-ikon.yesil{background:var(--yesil-acik);color:var(--yesil)}
+  .secenek{display:flex;gap:12px;align-items:flex-start;border:1.5px solid var(--cizgi);border-radius:12px;padding:12px 14px;cursor:pointer;margin-bottom:14px}
+  .secenek:hover{border-color:#b9c6dc}
+  .secenek input{width:19px;height:19px;margin:1px 0 0;accent-color:var(--mor);flex:none}
+  .secenek b{display:block;font-size:14px}
+  .secenek small{display:block;color:var(--soluk);font-size:12.5px;line-height:1.45;margin-top:2px}
+  .kur-satir{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .tehlike{border:1.5px solid #f3c9c9}
+  .tehlike-bas{background:linear-gradient(180deg,#fff7f7,#fff);border-bottom-color:#f6dada}
+  .tehlike-satir{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:14px 18px;border-top:1px solid #f9e3e3}
+  .tehlike-satir:first-of-type{border-top:0}
+  .tehlike-satir b{display:block;font-size:14px}
+  .tehlike-satir small{display:block;color:var(--soluk);font-size:12.5px;margin-top:2px}
+  .btn.tehlike-btn{color:var(--kirmizi);border-color:#f0c3c3;background:#fff;flex:none}
+  .btn.tehlike-btn:hover{background:var(--kirmizi);border-color:var(--kirmizi);color:#fff}
+  .btn.tehlike-btn.hafif{color:var(--yazi);border-color:var(--cizgi)}
+  .btn.tehlike-btn.hafif:hover{background:var(--gri-acik);color:var(--yazi)}
+  @media (max-width:900px){ .kur-izgara{grid-template-columns:1fr} .gecis-liste{grid-template-columns:1fr} }
   .adim{display:flex;gap:14px}
   .adim-no{flex:none;width:32px;height:32px;border-radius:50%;background:var(--ana);color:#fff;display:grid;place-items:center;font-weight:800}
   .adim-ic{flex:1;min-width:0}
@@ -233,6 +285,17 @@
     .subeler-tablo .islemler [data-tamamkaldir],.subeler-tablo .islemler [data-subekaldir]{grid-column:1/-1}
 
     /* Kurulum */
+    .kur-bas{padding:12px 14px;gap:10px}
+    .kur-ikon{width:38px;height:38px;border-radius:11px}
+    .kur-baslik h2{font-size:15.5px}
+    .kur-govde{padding:14px}
+    .kur-izgara{gap:12px}
+    .kur-izgara+.kutu{margin-top:12px}
+    .surukle{padding:20px 12px}
+    .tehlike-satir{flex-direction:column;align-items:stretch;gap:10px;padding:12px 14px}
+    .tehlike-satir .btn{width:100%}
+    .tehlike-bas .btn{padding:6px 8px}
+    .kur-sayfa{font-size:18px}
     .adim{gap:10px}
     .adim-no{width:28px;height:28px;font-size:14px}
     textarea.girdi{min-height:160px}
@@ -379,52 +442,95 @@
 
     <!-- KURULUM -->
     <section id="s-kurulum" class="gizli">
-      <div class="kutu">
-        <div class="adim">
-          <div class="adim-no">1</div>
-          <div class="adim-ic">
-            <h2>Şubeleri ve şube hesaplarını oluştur</h2>
-            <p class="soluk" style="margin-top:0">Her satıra bir şube yazın: <code>1A HİLAL ÇİÇEK</code>. Özel adlı sınıflar için adı ve öğretmeni iki nokta ile ayırın: <code>Uyum Sınıfı: AYŞE KAYA</code>. Her şube için otomatik 6 haneli şifre ve giriş hesabı oluşturulur. Tekrar çalıştırmak güvenlidir: var olan şifreler değişmez, yalnızca öğretmen adları güncellenir.</p>
-            <textarea class="girdi" id="ogretmenListe" placeholder="1A HİLAL ÇİÇEK&#10;1B BİLAL CAN TANIŞ&#10;…"></textarea>
-            <div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap">
-              <button class="btn ana" id="subeOlustur">Şubeleri oluştur / güncelle</button>
-            </div>
+      <div class="kur-ust">
+        <h2 class="kur-sayfa">Kurulum ve bakım</h2>
+        <p class="soluk">Şubeleri tanımlayın, öğrenci listesini yükleyin ve eğitim yılı geçişlerini buradan yönetin.</p>
+      </div>
+
+      <div class="kur-izgara">
+        <!-- ADIM 1 -->
+        <div class="kutu kur-kart">
+          <div class="kur-bas">
+            <div class="kur-ikon mavi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/></svg></div>
+            <div class="kur-baslik"><small>ADIM 1</small><h2>Şubeler ve giriş hesapları</h2></div>
+            <span class="rozet gri" id="kurDurum1">Başlanmadı</span>
+          </div>
+          <div class="kur-govde">
+            <p class="kur-aciklama">Her satıra bir şube ve öğretmenini yazın. Her yeni şubeye otomatik 6 haneli şifre ve giriş hesabı açılır. Tekrar çalıştırmak güvenlidir: var olan şifreler değişmez, yalnızca yeni satırlar eklenir ve öğretmen adları güncellenir.</p>
+            <div class="ornekler"><span>Örnek satırlar:</span><code>1A HİLAL ÇİÇEK</code><code>ANA B SERAP KAYA</code><code>Uyum Sınıfı: AYŞE KAYA</code></div>
+            <div class="liste-bas"><span>Şube listesi · <b id="satirSayi">0</b> satır</span><button type="button" class="btn kucuk hayalet" id="listeDoldur" title="Sistemdeki şubeleri kutuya getirir">↺ Sistemdeki listeyi getir</button></div>
+            <textarea class="girdi" id="ogretmenListe" spellcheck="false" placeholder="1A HİLAL ÇİÇEK&#10;1B BİLAL CAN TANIŞ&#10;…"></textarea>
+            <button class="btn ana genis kur-dugme" id="subeOlustur"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Şubeleri oluştur / güncelle</button>
             <div class="cubuk-kucuk gizli" id="subeCubuk"><i></i></div>
             <div class="gunluk gizli" id="subeGunluk"></div>
           </div>
         </div>
-      </div>
-      <div class="kutu">
-        <div class="adim">
-          <div class="adim-no">2</div>
-          <div class="adim-ic">
-            <h2>Excel listesinden öğrenci aktar</h2>
-            <p class="soluk" style="margin-top:0">Sütunlar: A Sınıf · B Okul No · C Öğrenci · D Veli · E Telefon. Başlık satırları otomatik atlanır. <b>Bu Excel dosyasını GitHub klasörüne koymayın.</b> Dosya yalnızca tarayıcınızda okunur.</p>
-            <input type="file" id="excelDosya" accept=".xlsx,.xls,.csv" class="girdi" style="padding:8px">
+
+        <!-- ADIM 2 -->
+        <div class="kutu kur-kart">
+          <div class="kur-bas">
+            <div class="kur-ikon yesil"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2.5"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="9" x2="9" y2="21"/></svg></div>
+            <div class="kur-baslik"><small>ADIM 2</small><h2>Excel’den öğrenci aktarımı</h2></div>
+            <span class="rozet gri" id="kurDurum2">Bekliyor</span>
+          </div>
+          <div class="kur-govde">
+            <p class="kur-aciklama">Sütun sırası: <b>A</b> Sınıf · <b>B</b> Okul No · <b>C</b> Öğrenci · <b>D</b> Veli · <b>E</b> Telefon. Başlık satırları kendiliğinden atlanır. Sistemde kayıt varsa yeni öğrenciler mevcut listeye eklenebilir.</p>
+            <label class="surukle" id="surukleAlan">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              <b id="surukleYazi">Excel dosyasını seçin ya da buraya sürükleyin</b>
+              <small>.xlsx · .xls · .csv — dosya yalnızca bu tarayıcıda okunur</small>
+              <input type="file" id="excelDosya" accept=".xlsx,.xls,.csv">
+            </label>
+            <div class="kur-not">🔒 Öğrenci Excel’ini GitHub klasörüne koymayın.</div>
             <div id="onizleme"></div>
             <div class="cubuk-kucuk gizli" id="aktarCubuk"><i></i></div>
           </div>
         </div>
       </div>
-      <div class="kutu">
-        <div class="adim">
-          <div class="adim-no" style="background:#7c3aed">3</div>
-          <div class="adim-ic">
-            <h2>Yeni eğitim yılına geçiş</h2>
-            <p class="soluk" style="margin-top:0">Eğitim yılı başında bir kez yapılır: <b>4. sınıflar mezun olur</b> ve <b>anasınıfı öğrencileri</b> listeden çıkar. 1→2, 2→3, 3→4 olarak <b>aynı harfli şubeye geçer</b>. “Ayrıldı” işaretli öğrenciler silinir. Kalan herkes “kontrol bekliyor” durumuna döner, böylece öğretmenler yeni yılda listelerini yeniden doğrular. Şube şifreleri değişmez. İşlem başlamadan önce tam bir Excel yedeği otomatik olarak indirilir.</p>
-            <label style="display:flex;gap:8px;align-items:flex-start;margin-bottom:12px;font-size:14px"><input type="checkbox" id="gecisOgretmen" checked style="margin-top:3px"> <span><b>Sınıf öğretmenleri öğrencileriyle birlikte üst sınıfa geçsin.</b> Örneğin 1/A öğretmeni 2/A olur, 4. sınıf öğretmenleri aynı harfli yeni 1. sınıfları alır. <b>Şifreler de öğretmenle birlikte taşınır:</b> öğretmen kendi şifresiyle yeni şubesine girer, eski şubesine giremez. Anasınıfı ve özel sınıflar olduğu gibi kalır.</span></label>
-            <button class="btn" id="gecisOnizle">Geçişi önizle</button>
-            <div id="gecisAlan"></div>
+
+      <!-- ADIM 3 -->
+      <div class="kutu kur-kart">
+        <div class="kur-bas">
+          <div class="kur-ikon mor"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c3 2 9 2 12 0v-5"/></svg></div>
+          <div class="kur-baslik"><small>YILDA BİR KEZ</small><h2>Yeni eğitim yılına geçiş</h2></div>
+          <span class="rozet gri" id="kurDurum3">Yapılmadı</span>
+        </div>
+        <div class="kur-govde">
+          <div class="gecis-liste">
+            <div><span class="gl-ikon kirmizi">🎓</span><div><b>Mezunlar çıkar</b><small>4. sınıflar, anasınıfı öğrencileri ve “ayrıldı” işaretlenenler silinir.</small></div></div>
+            <div><span class="gl-ikon mavi">⬆</span><div><b>Sınıflar yükselir</b><small>1→2, 2→3, 3→4; öğrenciler aynı harfli şubeye geçer, bilgileri korunur.</small></div></div>
+            <div><span class="gl-ikon yesil">✓</span><div><b>Yeniden doğrulama</b><small>Herkes “kontrol bekliyor” olur; öğretmenler listelerini yeni yılda onaylar.</small></div></div>
           </div>
+          <label class="secenek">
+            <input type="checkbox" id="gecisOgretmen" checked>
+            <span><b>Öğretmenler sınıflarıyla birlikte üst sınıfa geçsin</b><small>1/A öğretmeni 2/A olur, 4. sınıf öğretmenleri yeni 1. sınıfları alır. Şifreler de öğretmenle taşınır; öğretmen eski şubesine giremez. Anasınıfı ve özel sınıflar olduğu gibi kalır.</small></span>
+          </label>
+          <div class="kur-satir">
+            <button class="btn" id="gecisOnizle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>Geçişi önizle</button>
+            <span class="soluk" style="font-size:12.5px">Önizleme hiçbir veriyi değiştirmez. Geçiş öncesinde tam yedek otomatik indirilir.</span>
+          </div>
+          <div id="gecisAlan"></div>
         </div>
       </div>
-      <div class="kutu tehlike">
-        <h2 style="color:var(--kirmizi)">Tehlikeli işlemler</h2>
-        <p class="soluk" style="margin-top:0">Geri alınamaz. Gerekirse önce Excel yedeği indirin.</p>
-        <div style="display:flex;gap:10px;flex-wrap:wrap">
-          <button class="btn" id="tumOgrSil" style="color:var(--kirmizi)">Tüm öğrenci kayıtlarını sil</button>
-          <button class="btn" id="gunlukSil" style="color:var(--kirmizi)">İşlem geçmişini temizle</button>
-          <button class="btn" id="tamamSifirla">Tüm “tamamlandı” işaretlerini kaldır</button>
+
+      <!-- TEHLİKELİ İŞLEMLER -->
+      <div class="kutu kur-kart tehlike">
+        <div class="kur-bas tehlike-bas">
+          <div class="kur-ikon kirmizi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+          <div class="kur-baslik"><small>DİKKAT</small><h2>Tehlikeli işlemler</h2></div>
+          <button type="button" class="btn kucuk" id="tehlikeYedek" title="Önce yedek alın">⬇ Yedek indir</button>
+        </div>
+        <div class="tehlike-satir">
+          <div><b>Tüm öğrenci kayıtlarını sil</b><small>Bütün öğrenciler ve öğretmenlerin yaptığı değişiklikler kalıcı olarak silinir. Şubeler ve şifreler kalır.</small></div>
+          <button class="btn tehlike-btn" id="tumOgrSil">Kayıtları sil</button>
+        </div>
+        <div class="tehlike-satir">
+          <div><b>İşlem geçmişini temizle</b><small>Panodaki “Son işlemler” listesi boşaltılır. Öğrenci bilgileri etkilenmez.</small></div>
+          <button class="btn tehlike-btn" id="gunlukSil">Geçmişi temizle</button>
+        </div>
+        <div class="tehlike-satir">
+          <div><b>“Tamamlandı” işaretlerini kaldır</b><small>Tüm şubeler yeniden “devam ediyor” olur; öğretmenler listelerini tekrar onaylar.</small></div>
+          <button class="btn tehlike-btn hafif" id="tamamSifirla">İşaretleri kaldır</button>
         </div>
       </div>
     </section>
@@ -483,8 +589,8 @@
 <script type="module">
 import { baglan, ozelAdlariTanit, ozelAnahtarBul, ozelMi, OZEL_ADLAR, firebaseConfig, OKUL_ADI, SUBE_ALANI, TUM_SUBELER, subeAnahtari, subeAdi, subeExcel, subeSira, subeEposta,
   baslikYap, telTemizle, telGecerli, telGoster, noTemizle, esc, aramaMetni, DURUM, durumHesapla, degisenAlanlar,
-  sifreUret, hataMesaji, tost, tarihGoster } from './ortak.js?v=21';
-import { bugun, telSayi, excelJSYukle, XR, XDURUM, XTEL, sayfaAdi, noSayi, dolgu, xSayfa, subeSayfalari, subeRengi, excelKaydet } from './excel.js?v=21';
+  sifreUret, hataMesaji, tost, tarihGoster } from './ortak.js?v=22';
+import { bugun, telSayi, excelJSYukle, XR, XDURUM, XTEL, sayfaAdi, noSayi, dolgu, xSayfa, subeSayfalari, subeRengi, excelKaydet } from './excel.js?v=22';
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged, initializeAuth, inMemoryPersistence,
   createUserWithEmailAndPassword, updatePassword } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
@@ -1030,10 +1136,33 @@ async function sifreYenile(sk) {
 
 // ---------- Kurulum ----------
 const adKarsilastirYerel = v => String(v || '').toLocaleLowerCase('tr-TR').replace(/[\s\/\-\.]/g, '');
+const sistemListesi = () => tumSkler().filter(sk => subeler[sk]).map(sk => ozelMi(sk) ? `${subeAdi(sk)}: ${subeler[sk].ogretmen || ''}` : `${subeExcel(sk)} ${subeler[sk].ogretmen || ''}`.trim()).join('\n');
+function rozet(id, renk, metin) { const el = $(id); el.className = 'rozet ' + renk; el.textContent = metin; }
+function satirSay() { $('satirSayi').textContent = $('ogretmenListe').value.split('\n').filter(x => x.trim()).length; }
 function cizKurulum() {
-  if (!$('ogretmenListe').value.trim() && Object.keys(subeler).length)
-    $('ogretmenListe').value = tumSkler().filter(sk => subeler[sk]).map(sk => `${subeExcel(sk)} ${subeler[sk].ogretmen || ''}`.trim()).join('\n');
+  if (!$('ogretmenListe').value.trim() && Object.keys(subeler).length) $('ogretmenListe').value = sistemListesi();
+  satirSay();
+  const nSube = Object.keys(subeler).length, nHesap = Object.keys(subeler).filter(sk => sifreler[sk]).length;
+  if (!nSube) rozet('kurDurum1', 'gri', 'Başlanmadı');
+  else if (nHesap < nSube) rozet('kurDurum1', 'sari', `${nSube - nHesap} şubenin hesabı yok`);
+  else rozet('kurDurum1', 'yesil', `✓ ${nSube} şube hazır`);
+  const aktif = ogrenciler.filter(o => o.durum !== 'ayrildi').length;
+  rozet('kurDurum2', aktif ? 'yesil' : 'gri', aktif ? `✓ ${aktif} öğrenci` : 'Bekliyor');
+  const g = ayar.sonGecis?.toDate ? ayar.sonGecis.toDate() : null;
+  rozet('kurDurum3', g ? 'mor' : 'gri', g ? `Son: ${g.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' })}` : 'Henüz yapılmadı');
 }
+$('ogretmenListe').addEventListener('input', satirSay);
+$('listeDoldur').onclick = () => { $('ogretmenListe').value = sistemListesi(); satirSay(); tost('Sistemdeki şube listesi getirildi'); };
+$('tehlikeYedek').onclick = () => excelIndir('Yedek');
+// Excel sürükle-bırak
+['dragenter', 'dragover'].forEach(t => $('surukleAlan').addEventListener(t, e => { e.preventDefault(); $('surukleAlan').classList.add('ustunde'); }));
+['dragleave', 'drop'].forEach(t => $('surukleAlan').addEventListener(t, e => { e.preventDefault(); $('surukleAlan').classList.remove('ustunde'); }));
+$('surukleAlan').addEventListener('drop', e => {
+  const f = e.dataTransfer?.files?.[0]; if (!f) return;
+  const dt = new DataTransfer(); dt.items.add(f); $('excelDosya').files = dt.files;
+  $('excelDosya').dispatchEvent(new Event('change'));
+});
+$('excelDosya').addEventListener('change', () => { const f = $('excelDosya').files[0]; $('surukleYazi').textContent = f ? '📄 ' + f.name : 'Excel dosyasını seçin ya da buraya sürükleyin'; });
 function gunluk(m) { const g = $('subeGunluk'); g.classList.remove('gizli'); g.textContent += m + '\n'; g.scrollTop = g.scrollHeight; }
 $('subeOlustur').onclick = async () => {
   const satirlar = $('ogretmenListe').value.split('\n').map(s => s.trim()).filter(Boolean);
@@ -1173,7 +1302,7 @@ async function aktar(mod = 'degistir') {
     }
     ciz();
     $('onizleme').innerHTML = `<div class="bilgi-kutu" style="margin-top:12px;background:var(--yesil-acik);color:var(--yesil)">✓ ${veri.length} öğrenci aktarıldı.${atlanan ? ` Sistemde zaten olan ${atlanan} öğrenci atlandı.` : ''} Şimdi “Şubeler ve Şifreler” sekmesinden öğretmenlere mesaj gönderebilirsiniz.</div>`;
-    $('excelDosya').value = ''; onizlemeVeri = null;
+    $('excelDosya').value = ''; onizlemeVeri = null; $('surukleYazi').textContent = 'Excel dosyasını seçin ya da buraya sürükleyin';
     tost('Aktarım tamamlandı', 'tamam');
   } catch (err) { tost(hataMesaji(err), 'hata'); b.disabled = false; b.textContent = 'Tekrar dene'; }
 }
