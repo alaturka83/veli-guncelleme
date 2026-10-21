@@ -8,15 +8,15 @@
 <title>Veli Bilgileri · Yönetim</title>
 <script>
 // Sürüm kontrolü: GitHub'a yeni dosya yüklenince tarayıcı önbelleğini atlayıp yeni sürümü açar.
-(function(){var V='15';var u=new URL(location.href);fetch('surum.txt?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.text():''}).then(function(t){t=(t||'').trim();if(!t)return;if(t===V){if(u.searchParams.has('yv')){u.searchParams.delete('yv');u.searchParams.delete('r');history.replaceState(null,'',u.pathname+u.search+u.hash)}return}var once=Number(u.searchParams.get('r')||0);if(u.searchParams.get('yv')===t&&Date.now()-once<60000)return;u.searchParams.set('yv',t);u.searchParams.set('r',Date.now());location.replace(u.href)}).catch(function(){})})();
+(function(){var V='16';var u=new URL(location.href);fetch('surum.txt?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.text():''}).then(function(t){t=(t||'').trim();if(!t)return;if(t===V){if(u.searchParams.has('yv')){u.searchParams.delete('yv');u.searchParams.delete('r');history.replaceState(null,'',u.pathname+u.search+u.hash)}return}var once=Number(u.searchParams.get('r')||0);if(u.searchParams.get('yv')===t&&Date.now()-once<60000)return;u.searchParams.set('yv',t);u.searchParams.set('r',Date.now());location.replace(u.href)}).catch(function(){})})();
 </script>
-<link rel="stylesheet" href="ortak.css?v=15">
+<link rel="stylesheet" href="ortak.css?v=16">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <style>
   body{background:#eef1f6}
   .ust{background:#0f1b33;color:#fff;position:sticky;top:0;z-index:20}
-  .ust-ic{max-width:1240px;margin:0 auto;padding:12px 16px 0;padding-top:calc(12px + env(safe-area-inset-top))}
+  .ust-ic{max-width:1720px;margin:0 auto;padding:12px 16px 0;padding-top:calc(12px + env(safe-area-inset-top))}
   .ust-satir{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
   .ust h1{font-size:18px;margin:0;flex:1;min-width:180px}
   .ust h1 small{display:block;font-size:12.5px;font-weight:500;opacity:.7}
@@ -27,7 +27,7 @@
   .sekme{flex:none;background:transparent;border:0;color:rgba(255,255,255,.65);font-weight:600;padding:11px 14px;border-bottom:3px solid transparent}
   .sekme.secili{color:#fff;border-bottom-color:#60a5fa}
   .sekme .say{background:rgba(255,255,255,.15);border-radius:999px;padding:1px 7px;font-size:12px;margin-left:4px}
-  main{max-width:1240px;margin:0 auto;padding:18px 16px 60px}
+  main{max-width:1720px;margin:0 auto;padding:18px 16px 60px}
   h2{font-size:17px;margin:0 0 12px}
   .kutu{background:#fff;border-radius:var(--r);box-shadow:var(--golge);padding:16px;margin-bottom:16px}
   .kutu-baslik{display:flex;align-items:center;gap:10px;justify-content:space-between;flex-wrap:wrap;margin-bottom:12px}
@@ -110,6 +110,24 @@
   .son-islem div{padding:7px 0;border-bottom:1px solid var(--cizgi);display:flex;gap:10px}
   .son-islem time{color:var(--cok-soluk);white-space:nowrap;font-size:12.5px;min-width:96px}
   .iki-sutun{display:grid;grid-template-columns:1.6fr 1fr;gap:16px}
+  /* Geniş ekranlar: alanı yatayda kullan */
+  @media (min-width:1400px){
+    .ust-ic{padding-left:28px;padding-right:28px}
+    main{padding:20px 28px 60px}
+    .iki-sutun{grid-template-columns:minmax(0,2.5fr) minmax(360px,1fr);gap:20px}
+    .istat{grid-template-columns:repeat(8,1fr)}
+    .karolar{grid-template-columns:repeat(auto-fill,minmax(112px,1fr))}
+    .son-islem{max-height:640px;overflow:auto}
+  }
+  /* Çok geniş ekranlar: her sınıf düzeyi tek satır (A…M aynı sütunda), uyarılar ve son işlemler altta yan yana */
+  @media (min-width:1500px){
+    .iki-sutun{grid-template-columns:1fr}
+    .iki-sutun>div:last-child{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}
+    .iki-sutun>div:last-child>.kutu{margin-bottom:0}
+    .karolar{grid-template-columns:repeat(13,minmax(0,1fr));gap:7px}
+    .sinif-satir{grid-template-columns:60px 1fr;margin-bottom:8px}
+    .son-islem{max-height:420px}
+  }
   @media (max-width:900px){.iki-sutun{grid-template-columns:1fr}}
 
   /* Üst düğmeler + alt gezinme */
@@ -455,7 +473,7 @@
 <script type="module">
 import { baglan, ozelAdlariTanit, ozelAnahtarBul, ozelMi, OZEL_ADLAR, firebaseConfig, OKUL_ADI, SUBE_ALANI, TUM_SUBELER, subeAnahtari, subeAdi, subeExcel, subeSira, subeEposta,
   baslikYap, telTemizle, telGecerli, telGoster, noTemizle, esc, aramaMetni, DURUM, durumHesapla, degisenAlanlar,
-  sifreUret, hataMesaji, tost, tarihGoster } from './ortak.js?v=15';
+  sifreUret, hataMesaji, tost, tarihGoster } from './ortak.js?v=16';
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged, initializeAuth, inMemoryPersistence,
   createUserWithEmailAndPassword, updatePassword } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
