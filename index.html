@@ -8,9 +8,9 @@
 <title>Veli Bilgi Güncelleme</title>
 <script>
 // Sürüm kontrolü: GitHub'a yeni dosya yüklenince tarayıcı önbelleğini atlayıp yeni sürümü açar.
-(function(){var V='9';var u=new URL(location.href);fetch('surum.txt?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.text():''}).then(function(t){t=(t||'').trim();if(!t)return;if(t===V){if(u.searchParams.has('yv')){u.searchParams.delete('yv');u.searchParams.delete('r');history.replaceState(null,'',u.pathname+u.search+u.hash)}return}var once=Number(u.searchParams.get('r')||0);if(u.searchParams.get('yv')===t&&Date.now()-once<60000)return;u.searchParams.set('yv',t);u.searchParams.set('r',Date.now());location.replace(u.href)}).catch(function(){})})();
+(function(){var V='10';var u=new URL(location.href);fetch('surum.txt?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.text():''}).then(function(t){t=(t||'').trim();if(!t)return;if(t===V){if(u.searchParams.has('yv')){u.searchParams.delete('yv');u.searchParams.delete('r');history.replaceState(null,'',u.pathname+u.search+u.hash)}return}var once=Number(u.searchParams.get('r')||0);if(u.searchParams.get('yv')===t&&Date.now()-once<60000)return;u.searchParams.set('yv',t);u.searchParams.set('r',Date.now());location.replace(u.href)}).catch(function(){})})();
 </script>
-<link rel="stylesheet" href="ortak.css?v=9">
+<link rel="stylesheet" href="ortak.css?v=10">
 <style>
   /* ---------- Üst bant ---------- */
   .ust{position:sticky;top:0;z-index:20;background:var(--ana);color:#fff;padding:12px 16px 14px;padding-top:calc(12px + env(safe-area-inset-top))}
@@ -247,9 +247,9 @@
 <script type="module">
 import { baglan, OZEL_ADLAR, ozelMi, OKUL_ADI, SUBE_ALANI, TUM_SUBELER, subeAnahtari, subeAdi, subeEposta,
   baslikYap, telTemizle, telGecerli, telGoster, noTemizle, esc, aramaMetni, DURUM, durumHesapla,
-  hataMesaji, tost } from './ortak.js?v=9';
+  hataMesaji, tost } from './ortak.js?v=10';
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import { collection, doc, getDoc, getDocs, query, where, updateDoc, addDoc, deleteDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { collection, doc, getDoc, getDocs, query, where, updateDoc, addDoc, deleteDoc, serverTimestamp, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 const $ = id => document.getElementById(id);
 const IKON = {
@@ -323,7 +323,7 @@ $('cikisBtn').onclick = async () => { await signOut(auth); };
 
 if (!auth) girisHazirla();
 else onAuthStateChanged(auth, async user => {
-  if (!user) { girisHazirla(); return; }
+  if (!user) { dinleyicileriKapat(); girisHazirla(); return; }
   if (user.email !== subeEposta(hedefSk)) { await signOut(auth); return; }
   sk = hedefSk;
   goster('ekranYukle');
@@ -337,20 +337,40 @@ else onAuthStateChanged(auth, async user => {
   }
 });
 
+
+// ---------- Canlı dinleme ----------
+let dinleyiciler = [];
+function dinleyicileriKapat() { dinleyiciler.forEach(f => { try { f(); } catch {} }); dinleyiciler = []; }
+/** Firestore kaydını/sorgusunu canlı dinler; ilk veri gelince çözülür, sonraki değişikliklerde ekranı yeniler. */
+function dinle(ref, isle) {
+  return new Promise((ok, hata) => {
+    let ilk = true;
+    const kapat = onSnapshot(ref, snap => {
+      isle(snap);
+      if (ilk) { ilk = false; ok(); } else cizGecikmeli();
+      canliDurum(true);
+    }, err => {
+      console.error('Canlı bağlantı hatası:', err);
+      if (ilk) { ilk = false; hata(err); } else canliDurum(false);
+    });
+    dinleyiciler.push(kapat);
+  });
+}
+let cizZaman;
+function cizGecikmeli() {
+  clearTimeout(cizZaman);
+  cizZaman = setTimeout(() => { if (duzenlemeSuruyor()) return cizGecikmeli(); ciz(); }, 250);
+}
+function duzenlemeSuruyor() { return false; }
+function canliDurum() {}
+
 async function yukle() {
-  const [sSnap, aSnap, oSnap] = await Promise.all([
-    getDoc(doc(db, 'subeler', sk)),
-    getDoc(doc(db, 'genel', 'ayar')).catch(() => null),
-    getDocs(query(collection(db, 'ogrenciler'), where('sk', '==', sk))),
+  dinleyicileriKapat();
+  await Promise.all([
+    dinle(doc(db, 'subeler', sk), s => { sube = s.exists() ? s.data() : {}; if (ozelMi(sk) && sube.sinif) OZEL_ADLAR[sk] = sube.sinif; }),
+    dinle(doc(db, 'genel', 'ayar'), s => { ayar = s.exists() ? s.data() : {}; }).catch(() => {}),
+    dinle(query(collection(db, 'ogrenciler'), where('sk', '==', sk)), s => { ogrenciler = s.docs.map(d => ({ id: d.id, ...d.data() })); }),
   ]);
-  sube = sSnap.exists() ? sSnap.data() : {};
-  if (ozelMi(sk) && sube.sinif) OZEL_ADLAR[sk] = sube.sinif;
-  $('ustSube').style.fontSize = subeAdi(sk).length > 5 ? '14px' : '';
-  ayar = aSnap?.exists() ? aSnap.data() : {};
-  ogrenciler = oSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-  $('ustSube').textContent = subeAdi(sk);
-  $('ustOgretmen').textContent = sube.ogretmen || (subeAdi(sk) + ' Şubesi');
-  $('ustOkul').textContent = OKUL_ADI;
   ciz();
 }
 
@@ -370,6 +390,10 @@ function sayilar() {
   return c;
 }
 function ciz() {
+  $('ustSube').textContent = subeAdi(sk);
+  $('ustSube').style.fontSize = subeAdi(sk).length > 5 ? '14px' : '';
+  $('ustOgretmen').textContent = sube.ogretmen || (subeAdi(sk) + ' Şubesi');
+  $('ustOkul').textContent = OKUL_ADI;
   const c = sayilar();
   const mevcut = ogrenciler.filter(o => o.durum !== 'yeni').length;
   const kontrol = mevcut - c.bekliyor;
@@ -579,7 +603,7 @@ $('duzenForm').addEventListener('submit', async e => {
   let hata = false;
   ['alanNo','alanAd','alanVeli','alanTel'].forEach(a => alanHata(a, ''));
   if (!v.no) { alanHata('alanNo', 'Okul numarası gerekli'); hata = true; }
-  else if (ogrenciler.some(x => x !== aktif && x.no === v.no && x.durum !== 'ayrildi')) { alanHata('alanNo', 'Bu numara sınıfta başka bir öğrencide kayıtlı'); hata = true; }
+  else if (ogrenciler.some(x => x.id !== aktif?.id && x.no === v.no && x.durum !== 'ayrildi')) { alanHata('alanNo', 'Bu numara sınıfta başka bir öğrencide kayıtlı'); hata = true; }
   if (v.ad.length < 3) { alanHata('alanAd', 'Ad soyad gerekli'); hata = true; }
   if (v.tel && !telGecerli(v.tel)) { alanHata('alanTel', 'Geçersiz numara: 5 ile başlayan 10 hane olmalı'); hata = true; }
   if (hata) return;
@@ -613,7 +637,7 @@ $('yeniSilBtn').onclick = async () => {
   kapat('perdeDuzen');
   try {
     await deleteDoc(doc(db, 'ogrenciler', o.id));
-    ogrenciler = ogrenciler.filter(x => x !== o); ciz();
+    ogrenciler = ogrenciler.filter(x => x.id !== o.id); ciz();
     tost('Kayıt silindi');
     kayit('yeni-sil', o, null);
   } catch (err) { tost(hataMesaji(err), 'hata'); }
