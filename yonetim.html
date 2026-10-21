@@ -8,9 +8,9 @@
 <title>Veli Bilgileri · Yönetim</title>
 <script>
 // Sürüm kontrolü: GitHub'a yeni dosya yüklenince tarayıcı önbelleğini atlayıp yeni sürümü açar.
-(function(){var V='10';var u=new URL(location.href);fetch('surum.txt?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.text():''}).then(function(t){t=(t||'').trim();if(!t)return;if(t===V){if(u.searchParams.has('yv')){u.searchParams.delete('yv');u.searchParams.delete('r');history.replaceState(null,'',u.pathname+u.search+u.hash)}return}var once=Number(u.searchParams.get('r')||0);if(u.searchParams.get('yv')===t&&Date.now()-once<60000)return;u.searchParams.set('yv',t);u.searchParams.set('r',Date.now());location.replace(u.href)}).catch(function(){})})();
+(function(){var V='11';var u=new URL(location.href);fetch('surum.txt?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.text():''}).then(function(t){t=(t||'').trim();if(!t)return;if(t===V){if(u.searchParams.has('yv')){u.searchParams.delete('yv');u.searchParams.delete('r');history.replaceState(null,'',u.pathname+u.search+u.hash)}return}var once=Number(u.searchParams.get('r')||0);if(u.searchParams.get('yv')===t&&Date.now()-once<60000)return;u.searchParams.set('yv',t);u.searchParams.set('r',Date.now());location.replace(u.href)}).catch(function(){})})();
 </script>
-<link rel="stylesheet" href="ortak.css?v=10">
+<link rel="stylesheet" href="ortak.css?v=11">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <style>
@@ -202,7 +202,7 @@
     .subeler-tablo .islemler .btn{width:100%;min-height:42px;padding:6px 4px;font-size:13px}
     .subeler-tablo .islemler .btn.wa{grid-column:1/-1;min-height:46px;font-size:15px;background:#25d366;border-color:#25d366;color:#fff}
     .subeler-tablo .islemler .btn.wa svg{width:20px;height:20px}
-    .subeler-tablo .islemler [data-tamamkaldir]{grid-column:1/-1}
+    .subeler-tablo .islemler [data-tamamkaldir],.subeler-tablo .islemler [data-subekaldir]{grid-column:1/-1}
 
     /* Kurulum */
     .adim{gap:10px}
@@ -370,11 +370,23 @@
         <div class="adim">
           <div class="adim-no">2</div>
           <div class="adim-ic">
-            <h2>Geçen yılın Excel listesini içe aktar</h2>
+            <h2>Excel listesinden öğrenci aktar</h2>
             <p class="soluk" style="margin-top:0">Sütunlar: A Sınıf · B Okul No · C Öğrenci · D Veli · E Telefon. Başlık satırları otomatik atlanır. <b>Bu Excel dosyasını GitHub klasörüne koymayın.</b> Dosya yalnızca tarayıcınızda okunur.</p>
             <input type="file" id="excelDosya" accept=".xlsx,.xls,.csv" class="girdi" style="padding:8px">
             <div id="onizleme"></div>
             <div class="cubuk-kucuk gizli" id="aktarCubuk"><i></i></div>
+          </div>
+        </div>
+      </div>
+      <div class="kutu">
+        <div class="adim">
+          <div class="adim-no" style="background:#7c3aed">3</div>
+          <div class="adim-ic">
+            <h2>Yeni eğitim yılına geçiş</h2>
+            <p class="soluk" style="margin-top:0">Eğitim yılı başında bir kez yapılır: <b>4. sınıflar mezun olur</b> ve <b>anasınıfı öğrencileri</b> listeden çıkar. 1→2, 2→3, 3→4 olarak <b>aynı harfli şubeye geçer</b>. “Ayrıldı” işaretli öğrenciler silinir. Kalan herkes “kontrol bekliyor” durumuna döner, böylece öğretmenler yeni yılda listelerini yeniden doğrular. Şube şifreleri değişmez. İşlem başlamadan önce tam bir Excel yedeği otomatik olarak indirilir.</p>
+            <label style="display:flex;gap:8px;align-items:flex-start;margin-bottom:12px;font-size:14px"><input type="checkbox" id="gecisOgretmen" checked style="margin-top:3px"> <span><b>Sınıf öğretmenleri öğrencileriyle birlikte üst sınıfa geçsin.</b> Örneğin 1/A öğretmeni 2/A olur, 4. sınıf öğretmenleri aynı harfli yeni 1. sınıfları alır. <b>Şifreler de öğretmenle birlikte taşınır:</b> öğretmen kendi şifresiyle yeni şubesine girer, eski şubesine giremez. Anasınıfı ve özel sınıflar olduğu gibi kalır.</span></label>
+            <button class="btn" id="gecisOnizle">Geçişi önizle</button>
+            <div id="gecisAlan"></div>
           </div>
         </div>
       </div>
@@ -441,7 +453,7 @@
 <script type="module">
 import { baglan, ozelAdlariTanit, ozelAnahtarBul, ozelMi, OZEL_ADLAR, firebaseConfig, OKUL_ADI, SUBE_ALANI, TUM_SUBELER, subeAnahtari, subeAdi, subeExcel, subeSira, subeEposta,
   baslikYap, telTemizle, telGecerli, telGoster, noTemizle, esc, aramaMetni, DURUM, durumHesapla, degisenAlanlar,
-  sifreUret, hataMesaji, tost, tarihGoster } from './ortak.js?v=10';
+  sifreUret, hataMesaji, tost, tarihGoster } from './ortak.js?v=11';
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged, initializeAuth, inMemoryPersistence,
   createUserWithEmailAndPassword, updatePassword } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
@@ -842,6 +854,7 @@ function cizSube() {
         <button class="btn kucuk" data-kopya>Kopyala</button>
         <button class="btn kucuk" data-sifreyenile>Şifre yenile</button>
         ${s.tamamlandi ? `<button class="btn kucuk" data-tamamkaldir title="Öğretmen yeniden tamamlasın">Tamamlandı'yı kaldır</button>` : ''}
+        ${!r.toplam && subeler[sk] ? `<button class="btn kucuk" data-subekaldir style="color:var(--kirmizi)" title="Öğrencisi olmayan şubeyi listeden kaldırır">Şubeyi kaldır</button>` : ''}
       </div></td></tr>`;
   }).join('') || bosSatir(6);
 }
@@ -855,6 +868,9 @@ $('sGovde').addEventListener('click', async e => {
   if (e.target.closest('[data-kopya]')) kopyala(mesajMetni(sk));
   if (e.target.closest('[data-sifreyenile]')) onayIste(`${subeAdi(sk)} şifresi yenilensin mi?`, 'Eski şifre artık çalışmaz; öğretmene yeni şifreyi göndermeniz gerekir.', () => sifreYenile(sk));
   if (e.target.closest('[data-tamamkaldir]')) { await subeGuncelle(sk, { tamamlandi: false, tamamTarih: null }); tost('İşaret kaldırıldı'); }
+  if (e.target.closest('[data-subekaldir]')) onayIste(`${subeAdi(sk)} kaldırılsın mı?`, 'Öğrencisi olmayan şube listeden çıkar. Şifresi saklanır; Kurulum’dan aynı şubeyi yeniden eklerseniz eski şifresiyle geri gelir.', async () => {
+    try { await deleteDoc(doc(db, 'subeler', sk)); delete subeler[sk]; ciz(); tost(`${subeAdi(sk)} kaldırıldı`); } catch (err) { tost(hataMesaji(err), 'hata'); }
+  });
 });
 $('sGovde').addEventListener('change', async e => {
   const tr = e.target.closest('tr[data-sk]'); if (!tr) return; const sk = tr.dataset.sk;
@@ -921,17 +937,26 @@ async function hesapOlustur(sk, sifre) {
     }
   }
 }
+/** Şube hesabının şifresini değiştirir ve kayıtlı şifreyi günceller (çok istek hatasında bekleyip yeniden dener). */
+async function sifreDegistir(sk, yeni) {
+  for (let deneme = 0; ; deneme++) {
+    try {
+      const k = await signInWithEmailAndPassword(auth2, subeEposta(sk), sifreler[sk]);
+      await updatePassword(k.user, yeni);
+      await signOut(auth2);
+      sifreler[sk] = yeni;
+      await setDoc(doc(db, 'yonetim', 'sifreler'), { [sk]: yeni }, { merge: true });
+      return;
+    } catch (err) {
+      if (err.code === 'auth/too-many-requests' && deneme < 3) { await bekle(15000 * (deneme + 1)); continue; }
+      throw err;
+    }
+  }
+}
 async function sifreYenile(sk) {
-  const eski = sifreler[sk];
   const yeni = sifreUret();
-  try {
-    const k = await signInWithEmailAndPassword(auth2, subeEposta(sk), eski);
-    await updatePassword(k.user, yeni);
-    await signOut(auth2);
-    sifreler[sk] = yeni;
-    await setDoc(doc(db, 'yonetim', 'sifreler'), { [sk]: yeni }, { merge: true });
-    ciz(); tost(`${subeAdi(sk)} yeni şifre: ${yeni}`, 'tamam');
-  } catch (err) { tost(hataMesaji(err), 'hata'); }
+  try { await sifreDegistir(sk, yeni); ciz(); tost(`${subeAdi(sk)} yeni şifre: ${yeni}`, 'tamam'); }
+  catch (err) { tost(hataMesaji(err), 'hata'); }
 }
 
 // ---------- Kurulum ----------
@@ -964,6 +989,13 @@ $('subeOlustur').onclick = async () => {
   if (!liste.length) { tost('Liste boş', 'hata'); return; }
   const b = $('subeOlustur'); b.disabled = true;
   $('subeGunluk').textContent = ''; $('subeCubuk').classList.remove('gizli');
+  const { yeniHesap, hata } = await subeleriKur(liste);
+  gunluk(`\nBitti: ${liste.length} şube, ${yeniHesap} yeni hesap${hata ? `, ${hata} sorun` : ''}.`);
+  b.disabled = false; ciz();
+  tost(hata ? 'Bazı şubelerde sorun var, günlüğe bakın' : 'Şubeler hazır', hata ? 'hata' : 'tamam');
+};
+/** Şube kayıtlarını yazar, şifresi olmayan şubelere giriş hesabı açar. Var olan şifrelere dokunmaz. */
+async function subeleriKur(liste) {
   let yeniHesap = 0, hata = 0;
   for (let i = 0; i < liste.length; i++) {
     const { sk, ogretmen } = liste[i];
@@ -988,10 +1020,8 @@ $('subeOlustur').onclick = async () => {
     } catch (err) { hata++; gunluk(`✗ ${subeAdi(sk)}: ${hataMesaji(err)}`); }
     $('subeCubuk').firstElementChild.style.width = Math.round((i + 1) / liste.length * 100) + '%';
   }
-  gunluk(`\nBitti: ${liste.length} şube, ${yeniHesap} yeni hesap${hata ? `, ${hata} sorun` : ''}.`);
-  b.disabled = false; ciz();
-  tost(hata ? 'Bazı şubelerde sorun var, günlüğe bakın' : 'Şubeler hazır', hata ? 'hata' : 'tamam');
-};
+  return { yeniHesap, hata };
+}
 
 let onizlemeVeri = null;
 $('excelDosya').addEventListener('change', async e => {
@@ -1026,11 +1056,17 @@ $('excelDosya').addEventListener('change', async e => {
       Telefonu boş: ${telYok} · Veli adı boş: ${veliYok}${telHatali ? ` · <b>Hatalı telefon: ${telHatali}</b> (yine de aktarılır, öğretmen düzeltir)` : ''}</div>
       ${tanimsizSay ? `<div class="uyari-kutu">⚠ Sistemde tanımlı olmayan şubelere ait <b>${tanimsizSay}</b> öğrenci aktarılmayacak: ${Object.entries(tanimsiz).map(([e, n]) => `${esc(e)} (${n})`).join(', ')}.<br><span style="font-weight:500">Bu öğrencilerin de aktarılmasını istiyorsanız önce 1. adımda o şubeleri oluşturup dosyayı yeniden seçin.</span></div>` : ''}
       <div style="font-size:13px;color:var(--soluk);margin-bottom:10px">${Object.entries(sube).sort((a, b) => subeSira(a[0], b[0])).map(([s, n]) => `${subeAdi(s)}: ${n}`).join(' · ')}</div>
-      ${ogrenciler.length ? `<div class="uyari-kutu">Sistemde zaten ${ogrenciler.length} öğrenci kaydı var. Aktarım öncesinde mevcut kayıtlar SİLİNECEK.</div>` : ''}
+      ${ogrenciler.length ? `<div class="kutu" style="box-shadow:none;border:1.5px solid var(--cizgi);padding:12px;margin:0 0 12px">
+        <b style="display:block;margin-bottom:6px">Sistemde ${ogrenciler.length} öğrenci kaydı var. Ne yapılsın?</b>
+        <label style="display:flex;gap:8px;margin-bottom:6px"><input type="radio" name="aktarMod" value="ekle" checked> <span><b>Mevcut kayıtlara ekle</b> (önerilen) — sistemde zaten olan okul numaraları atlanır, öğretmenlerin çalışması korunur. Yeni 1. sınıf ve anasınıfı listeleri için bunu seçin.</span></label>
+        <label style="display:flex;gap:8px"><input type="radio" name="aktarMod" value="degistir"> <span><b>Tümünü silip yeniden yükle</b> — öğretmenlerin yaptığı bütün değişiklikler kaybolur.</span></label>
+      </div>` : ''}
       <button class="btn ana" id="aktarBtn">${kayit.length} öğrenciyi aktar</button>`;
-    $('aktarBtn').onclick = () => ogrenciler.length
-      ? onayIste('Mevcut kayıtlar silinip yeniden aktarılsın mı?', `Öğretmenlerin yaptığı tüm değişiklikler kaybolur (${ogrenciler.length} kayıt).`, aktar, 'SİL')
-      : aktar();
+    $('aktarBtn').onclick = () => {
+      const mod = document.querySelector('input[name=aktarMod]:checked')?.value || 'degistir';
+      if (mod === 'degistir' && ogrenciler.length) onayIste('Mevcut kayıtlar silinip yeniden aktarılsın mı?', `Öğretmenlerin yaptığı tüm değişiklikler kaybolur (${ogrenciler.length} kayıt).`, () => aktar('degistir'), 'SİL');
+      else aktar(mod);
+    };
   } catch (err) { $('onizleme').innerHTML = `<div class="hata-kutu" style="margin-top:12px">Dosya okunamadı: ${esc(err.message)}</div>`; }
 });
 async function topluSil(yol, ilerle) {
@@ -1042,13 +1078,21 @@ async function topluSil(yol, ilerle) {
   }
   return l.length;
 }
-async function aktar() {
-  const veri = onizlemeVeri; if (!veri) return;
+async function aktar(mod = 'degistir') {
+  let veri = onizlemeVeri; if (!veri) return;
+  let atlanan = 0;
+  if (mod === 'ekle') {
+    const varOlan = new Set(ogrenciler.filter(o => o.durum !== 'ayrildi' && o.no).map(o => o.no));
+    const once = veri.length;
+    veri = veri.filter(v => !v.no || !varOlan.has(v.no));
+    atlanan = once - veri.length;
+    if (!veri.length) { tost(`Listedeki ${atlanan} öğrencinin hepsi zaten sistemde`, 'hata'); return; }
+  }
   const b = $('aktarBtn'); b.disabled = true;
   const cubuk = $('aktarCubuk'); cubuk.classList.remove('gizli');
   const ilerle = (n, t) => { cubuk.firstElementChild.style.width = Math.round(n / t * 100) + '%'; b.textContent = `Aktarılıyor… ${n}/${t}`; };
   try {
-    if (ogrenciler.length) { b.textContent = 'Eski kayıtlar siliniyor…'; await topluSil('ogrenciler'); }
+    if (mod === 'degistir' && ogrenciler.length) { b.textContent = 'Eski kayıtlar siliniyor…'; await topluSil('ogrenciler'); }
     for (let i = 0; i < veri.length; i += 400) {
       const bt = writeBatch(db);
       veri.slice(i, i + 400).forEach(v => {
@@ -1059,7 +1103,7 @@ async function aktar() {
       ilerle(Math.min(i + 400, veri.length), veri.length);
     }
     ciz();
-    $('onizleme').innerHTML = `<div class="bilgi-kutu" style="margin-top:12px;background:var(--yesil-acik);color:var(--yesil)">✓ ${veri.length} öğrenci aktarıldı. Şimdi “Şubeler ve Şifreler” sekmesinden öğretmenlere mesaj gönderebilirsiniz.</div>`;
+    $('onizleme').innerHTML = `<div class="bilgi-kutu" style="margin-top:12px;background:var(--yesil-acik);color:var(--yesil)">✓ ${veri.length} öğrenci aktarıldı.${atlanan ? ` Sistemde zaten olan ${atlanan} öğrenci atlandı.` : ''} Şimdi “Şubeler ve Şifreler” sekmesinden öğretmenlere mesaj gönderebilirsiniz.</div>`;
     $('excelDosya').value = ''; onizlemeVeri = null;
     tost('Aktarım tamamlandı', 'tamam');
   } catch (err) { tost(hataMesaji(err), 'hata'); b.disabled = false; b.textContent = 'Tekrar dene'; }
@@ -1074,6 +1118,89 @@ $('tamamSifirla').onclick = () => onayIste('Tüm şubelerin “tamamlandı” i�
   try { const b = writeBatch(db); tumSkler().forEach(sk => b.set(doc(db, 'subeler', sk), { tamamlandi: false, tamamTarih: null }, { merge: true })); await b.commit();
     tumSkler().forEach(sk => subeler[sk] = { ...(subeler[sk] || {}), tamamlandi: false, tamamTarih: null }); ciz(); tost('Kaldırıldı'); } catch (err) { tost(hataMesaji(err), 'hata'); }
 });
+
+// ================= YENİ EĞİTİM YILINA GEÇİŞ =================
+const ustSube = sk => (Number(sk[0]) + 1) + sk.slice(1);
+function gecisPlani() {
+  const ogretmenTasi = $('gecisOgretmen').checked;
+  const sil = ogrenciler.filter(o => o.durum === 'ayrildi' || o.sk?.[0] === '4' || o.sk?.[0] === '0');
+  const yukselt = ogrenciler.filter(o => o.durum !== 'ayrildi' && ['1', '2', '3'].includes(o.sk?.[0]));
+  const ozel = ogrenciler.filter(o => o.durum !== 'ayrildi' && o.sk?.[0] === '5');
+  const yeniOgr = {};
+  if (ogretmenTasi) for (const sk of Object.keys(subeler)) {
+    const g = sk[0];
+    if (g >= '1' && g <= '3') yeniOgr[ustSube(sk)] = subeler[sk].ogretmen || '';
+    else if (g === '4') yeniOgr['1' + sk.slice(1)] = subeler[sk].ogretmen || '';
+  }
+  const hedefler = new Set([...yukselt.map(o => ustSube(o.sk)), ...Object.keys(yeniOgr).filter(k => yeniOgr[k])]);
+  const eksikSube = [...hedefler].filter(sk => !subeler[sk]).sort(subeSira);
+  const sayi = g => ogrenciler.filter(o => o.durum !== 'ayrildi' && o.sk?.[0] === g).length;
+  return { ogretmenTasi, sil, yukselt, ozel, yeniOgr, eksikSube, mezun: sayi('4'), ana: sayi('0'), ayrilan: ogrenciler.filter(o => o.durum === 'ayrildi').length };
+}
+$('gecisOnizle').onclick = () => {
+  const p = gecisPlani();
+  const ogrSatir = p.ogretmenTasi ? Object.keys(subeler).filter(sk => sk[0] >= '1' && sk[0] <= '4' && subeler[sk].ogretmen).sort(subeSira)
+    .map(sk => `<tr><td>${esc(subeler[sk].ogretmen)}</td><td class="sayi">${subeAdi(sk)} → <b>${subeAdi(sk[0] === '4' ? '1' + sk.slice(1) : ustSube(sk))}</b></td></tr>`).join('') : '';
+  $('gecisAlan').innerHTML = `<div class="uyari-kutu" style="margin-top:12px;font-weight:500">
+      <b>Silinecek:</b> ${p.mezun} mezun 4. sınıf öğrencisi, ${p.ana} anasınıfı öğrencisi, ${p.ayrilan} “ayrıldı” işaretli öğrenci (toplam ${p.sil.length}).<br>
+      <b>Üst sınıfa geçecek:</b> ${p.yukselt.length} öğrenci (1→2, 2→3, 3→4).${p.ozel.length ? `<br><b>Özel sınıflarda kalacak:</b> ${p.ozel.length} öğrenci.` : ''}<br>
+      ${p.eksikSube.length ? `<b>Yeni açılacak şubeler:</b> ${p.eksikSube.map(subeAdi).join(', ')} (otomatik şifreyle).<br>` : ''}
+      Tüm şubelerin “tamamlandı” işareti ve kilidi kaldırılır, işlem geçmişi temizlenir, son tarih sıfırlanır.</div>
+    ${ogrSatir ? `<details style="margin-bottom:12px"><summary style="cursor:pointer;font-weight:600">Öğretmen yerleşimini göster</summary><table class="tablo" style="margin-top:8px;max-width:460px"><tbody>${ogrSatir}</tbody></table></details>` : ''}
+    <button class="btn kirmizi" id="gecisBaslat">Yedeği indir ve geçişi başlat</button>
+    <div class="cubuk-kucuk gizli" id="gecisCubuk"><i></i></div>`;
+  $('gecisBaslat').onclick = () => onayIste('Yeni eğitim yılına geçilsin mi?',
+    `${p.sil.length} öğrenci silinecek, ${p.yukselt.length} öğrenci üst sınıfa geçecek. Önce Excel yedeği indirilecek. Bu işlem geri alınamaz.`, () => gecisYap(), 'GEÇİŞ');
+};
+async function gecisYap() {
+  const b = $('gecisBaslat'); b.disabled = true; b.textContent = 'Yedek indiriliyor…';
+  const p = gecisPlani();
+  const oncekiSifre = { ...sifreler };
+  const donem = Date.now();
+  try {
+    if (!(await excelIndir('YEDEK_Gecis_Oncesi'))) throw new Error('Yedek alınamadı, geçiş başlatılmadı.');
+    if (p.eksikSube.length) {
+      b.textContent = 'Yeni şubeler açılıyor…';
+      $('subeGunluk').textContent = '';
+      const { hata } = await subeleriKur(p.eksikSube.map(sk => ({ sk, ogretmen: p.yeniOgr[sk] || '' })));
+      if (hata) throw new Error('Bazı yeni şubeler açılamadı (Kurulum günlüğüne bakın). Geçiş yapılmadı.');
+    }
+    const islemler = [];
+    p.sil.forEach(o => islemler.push(bt => bt.delete(doc(db, 'ogrenciler', o.id))));
+    p.yukselt.forEach(o => { const yeni = ustSube(o.sk);
+      islemler.push(bt => bt.update(doc(db, 'ogrenciler', o.id), { sk: yeni, durum: 'bekliyor', oncekiDurum: null, orj: { sk: yeni, no: o.no || '', ad: o.ad || '', veli: o.veli || '', tel: o.tel || '' }, guncel: serverTimestamp() })); });
+    p.ozel.forEach(o => islemler.push(bt => bt.update(doc(db, 'ogrenciler', o.id), { durum: 'bekliyor', oncekiDurum: null, orj: { sk: o.sk, no: o.no || '', ad: o.ad || '', veli: o.veli || '', tel: o.tel || '' }, guncel: serverTimestamp() })));
+    const tumSube = new Set([...Object.keys(subeler), ...p.eksikSube]);
+    tumSube.forEach(sk => { const v = { tamamlandi: false, tamamTarih: null, kilitli: false };
+      if (p.ogretmenTasi && sk[0] >= '1' && sk[0] <= '4') { v.ogretmen = p.yeniOgr[sk] || ''; v.donem = donem; }
+      islemler.push(bt => bt.set(doc(db, 'subeler', sk), v, { merge: true })); });
+    const cubuk = $('gecisCubuk'); cubuk.classList.remove('gizli');
+    for (let i = 0; i < islemler.length; i += 400) {
+      const bt = writeBatch(db); islemler.slice(i, i + 400).forEach(f => f(bt)); await bt.commit();
+      const n = Math.min(i + 400, islemler.length);
+      cubuk.firstElementChild.style.width = Math.round(n / islemler.length * 100) + '%'; b.textContent = `Uygulanıyor… ${n}/${islemler.length}`;
+    }
+    await topluSil('kayitlar').catch(() => {});
+    await setDoc(doc(db, 'genel', 'ayar'), { sonTarih: null, sonGecis: serverTimestamp() }, { merge: true });
+    // Şifreler öğretmenle birlikte taşınır: 1/A öğretmeni 2/A'ya eski şifresiyle girer; eski şubesine artık giremez.
+    const sorunlu = [];
+    if (p.ogretmenTasi) {
+      const kaynak = sk => sk[0] === '1' ? '4' + sk.slice(1) : (Number(sk[0]) - 1) + sk.slice(1);
+      const hesaplar = Object.keys(sifreler).filter(sk => sk[0] >= '1' && sk[0] <= '4').sort(subeSira);
+      for (let i = 0; i < hesaplar.length; i++) {
+        const sk = hesaplar[i];
+        const yeni = (p.yeniOgr[sk] && oncekiSifre[kaynak(sk)]) || sifreUret();
+        b.textContent = `Şifreler öğretmenlerle taşınıyor… ${i + 1}/${hesaplar.length}`;
+        if (yeni === sifreler[sk]) continue;
+        try { await sifreDegistir(sk, yeni); await bekle(300); } catch (err) { sorunlu.push(subeAdi(sk)); }
+      }
+    }
+    $('gecisAlan').innerHTML = `<div class="bilgi-kutu" style="margin-top:12px;background:var(--yesil-acik);color:var(--yesil)">✓ Yeni eğitim yılına geçildi. ${p.sil.length} öğrenci silindi, ${p.yukselt.length} öğrenci üst sınıfa geçti.${p.ogretmenTasi ? ' Öğretmenler eski şifreleriyle yeni şubelerine girebilir; açık oturumlar kapatıldı.' : ''}<br>
+      ${sorunlu.length ? `<b style="color:var(--kirmizi)">Şu şubelerin şifresi taşınamadı: ${sorunlu.join(', ')}. Şubeler sekmesinden “Şifre yenile” ile yeni şifre verin.</b><br>` : ''}
+      <span style="font-weight:500">Sıradaki adımlar: 1) Yeni 1. sınıf ve anasınıfı listelerini 2. adımdan <b>“Mevcut kayıtlara ekle”</b> ile yükleyin ya da öğretmenler kendileri eklesin. 2) Öğretmen adlarını Şubeler sekmesinden kontrol edin. 3) Son tarihi belirleyip mesajları gönderin.</span></div>`;
+    tost('Geçiş tamamlandı', 'tamam');
+  } catch (err) { tost(err.message || hataMesaji(err), 'hata'); b.disabled = false; b.textContent = 'Tekrar dene'; }
+}
 
 // ================= EXCEL =================
 function bugun() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
@@ -1162,7 +1289,8 @@ function xSayfa(wb, ad, { baslik, alt, kolonlar, satirlar, durumlar, toplam, yat
   return ws;
 }
 
-$('excelBtn').onclick = async () => {
+$('excelBtn').onclick = () => excelIndir();
+async function excelIndir(onEk = 'Veli_Iletisim') {
   const btn = $('excelBtn'); const eski = btn.innerHTML;
   btn.disabled = true; btn.innerHTML = '<span class="donen" style="width:16px;height:16px;border-width:2px;margin:0"></span><span class="yazi">Hazırlanıyor…</span>';
   try {
@@ -1241,13 +1369,14 @@ $('excelBtn').onclick = async () => {
     const buf = await wb.xlsx.writeBuffer();
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
-    a.download = `Veli_Iletisim_${bugun()}.xlsx`;
+    a.download = `${onEk}_${bugun()}.xlsx`;
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 5000);
     tost('Excel hazırlandı', 'tamam');
-  } catch (err) { tost(hataMesaji(err), 'hata'); }
+    return true;
+  } catch (err) { tost(hataMesaji(err), 'hata'); return false; }
   finally { btn.disabled = false; btn.innerHTML = eski; }
-};
+}
 </script>
 </body>
 </html>
