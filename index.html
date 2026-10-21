@@ -8,9 +8,9 @@
 <title>Veli Bilgi Güncelleme</title>
 <script>
 // Sürüm kontrolü: GitHub'a yeni dosya yüklenince tarayıcı önbelleğini atlayıp yeni sürümü açar.
-(function(){var V='6';fetch('surum.txt?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.text():''}).then(function(t){t=(t||'').trim();if(!t||t===V)return;var k='surum-'+t;try{if(sessionStorage.getItem(k))return;sessionStorage.setItem(k,'1')}catch(e){}var u=new URL(location.href);u.searchParams.set('v',t);location.replace(u.href)}).catch(function(){})})();
+(function(){var V='7';fetch('surum.txt?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.text():''}).then(function(t){t=(t||'').trim();if(!t||t===V)return;var k='surum-'+t;try{if(sessionStorage.getItem(k))return;sessionStorage.setItem(k,'1')}catch(e){}var u=new URL(location.href);u.searchParams.set('v',t);location.replace(u.href)}).catch(function(){})})();
 </script>
-<link rel="stylesheet" href="ortak.css?v=6">
+<link rel="stylesheet" href="ortak.css?v=7">
 <style>
   /* ---------- Üst bant ---------- */
   .ust{position:sticky;top:0;z-index:20;background:var(--ana);color:#fff;padding:12px 16px 14px;padding-top:calc(12px + env(safe-area-inset-top))}
@@ -62,6 +62,30 @@
   .ogr-islem .btn.onay.aktif{background:var(--yesil);color:#fff;border-color:var(--yesil)}
   .ogr-islem .btn.ayril{color:var(--kirmizi);border-color:#f3c9c9}
   .bos{text-align:center;color:var(--soluk);padding:40px 10px}
+
+  /* Görünüm seçici + isim listesi */
+  .arac-ust{display:flex;gap:8px;align-items:center}
+  .arac-ust .ara{flex:1}
+  .gorunum{display:flex;background:#e6eaf1;border-radius:10px;padding:3px;flex:none}
+  .gorunum button{border:0;background:transparent;border-radius:8px;width:40px;height:38px;display:grid;place-items:center;color:var(--soluk)}
+  .gorunum button svg{width:20px;height:20px}
+  .gorunum button.secili{background:#fff;color:var(--ana);box-shadow:var(--golge)}
+  .isim-liste{background:var(--kart);border-radius:var(--r);box-shadow:var(--golge);overflow:hidden}
+  .isim-ust{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--cizgi);font-size:13px;color:var(--soluk);font-weight:600}
+  .isim-satir{display:flex;align-items:center;gap:12px;padding:11px 14px;border-bottom:1px solid var(--cizgi);cursor:pointer;width:100%;background:none;border-left:0;border-right:0;border-top:0;text-align:left}
+  .isim-satir:last-child{border-bottom:0}
+  .isim-satir:active{background:#f3f6fb}
+  .isim-sira{width:26px;text-align:right;color:var(--cok-soluk);font-weight:700;font-size:13px;font-variant-numeric:tabular-nums;flex:none}
+  .isim-ad{flex:1;min-width:0;font-weight:600;font-size:15.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .isim-ad small{display:block;font-weight:500;font-size:12.5px;color:var(--soluk)}
+  .isim-satir.ayrildi .isim-ad{text-decoration:line-through;color:var(--cok-soluk)}
+  .isim-durum{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;flex:none;font-size:13px;font-weight:800}
+  .isim-durum.gri{background:var(--gri-acik);color:var(--gri)} .isim-durum.yesil{background:var(--yesil);color:#fff}
+  .isim-durum.mavi{background:var(--mavi);color:#fff} .isim-durum.kirmizi{background:var(--kirmizi);color:#fff} .isim-durum.mor{background:var(--mor);color:#fff}
+  .islem-bilgi{display:grid;gap:8px;margin:0 0 16px;font-size:15px}
+  .islem-bilgi a{color:var(--ana);font-weight:700;text-decoration:none}
+  .islem-dugmeler{display:grid;gap:10px}
+  .islem-dugmeler .btn{min-height:48px;font-size:15.5px;justify-content:flex-start;padding-left:16px}
 
   /* ---------- Alt çubuk ---------- */
   .alt{position:fixed;left:0;right:0;bottom:0;background:rgba(255,255,255,.96);backdrop-filter:blur(8px);border-top:1px solid var(--cizgi);padding:10px 16px calc(10px + env(safe-area-inset-bottom));z-index:20}
@@ -139,9 +163,15 @@
 
   <div class="arac">
     <div id="seritler" style="display:grid;gap:10px;margin-bottom:10px"></div>
-    <div class="ara">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input id="ara" class="girdi" type="search" placeholder="Öğrenci, veli ya da numara ara">
+    <div class="arac-ust">
+      <div class="ara">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input id="ara" class="girdi" type="search" placeholder="Öğrenci, veli ya da numara ara">
+      </div>
+      <div class="gorunum" role="group" aria-label="Görünüm">
+        <button type="button" data-g="kart" title="Kart görünümü" aria-label="Kart görünümü"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/></svg></button>
+        <button type="button" data-g="liste" title="İsim listesi" aria-label="İsim listesi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="9" y1="6" x2="21" y2="6"/><line x1="9" y1="12" x2="21" y2="12"/><line x1="9" y1="18" x2="21" y2="18"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/></svg></button>
+      </div>
     </div>
     <div class="cipler" id="cipler"></div>
   </div>
@@ -175,6 +205,18 @@
 </div>
 
 <!-- ============ AYRILDI ONAYI ============ -->
+<!-- ============ İSİM LİSTESİNDEN İŞLEM ============ -->
+<div class="perde" id="perdeIslem">
+  <div class="panel">
+    <div class="tutamak"></div>
+    <h3 id="islemAd"></h3>
+    <p class="alt-baslik" id="islemAlt"></p>
+    <div class="islem-bilgi" id="islemBilgi"></div>
+    <div class="islem-dugmeler" id="islemDugmeler"></div>
+    <button class="btn hayalet genis" data-kapat style="margin-top:8px">Kapat</button>
+  </div>
+</div>
+
 <div class="perde" id="perdeAyril">
   <div class="panel">
     <div class="tutamak"></div>
@@ -205,7 +247,7 @@
 <script type="module">
 import { baglan, OKUL_ADI, SUBE_ALANI, TUM_SUBELER, subeAnahtari, subeAdi, subeEposta,
   baslikYap, telTemizle, telGecerli, telGoster, noTemizle, esc, aramaMetni, DURUM, durumHesapla,
-  hataMesaji, tost } from './ortak.js?v=6';
+  hataMesaji, tost } from './ortak.js?v=7';
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { collection, doc, getDoc, getDocs, query, where, updateDoc, addDoc, deleteDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
@@ -228,6 +270,8 @@ let ogrenciler = [];
 let filtre = 'tumu';
 let arama = '';
 let aktif = null;        // düzenlenen öğrenci (null = yeni)
+let gorunum = 'kart';
+try { if (localStorage.getItem('gorunum') === 'liste') gorunum = 'liste'; } catch {}
 
 const goster = id => ['ekranYukle','ekranGiris','ekranAna'].forEach(e => $(e).classList.toggle('gizli', e !== id));
 $('okulAdiGiris').textContent = OKUL_ADI;
@@ -366,9 +410,56 @@ function ciz() {
   });
   // ayrılanlar sonda
   l.sort((a, b) => (a.durum === 'ayrildi') - (b.durum === 'ayrildi') || sirala(a, b));
-  $('liste').innerHTML = l.length ? l.map(o => kart(o, kilitli)).join('')
-    : `<div class="bos">${filtre === 'bekliyor' && !q ? '🎉 Kontrol bekleyen öğrenci kalmadı.' : 'Bu listede öğrenci yok.'}</div>`;
+  document.querySelectorAll('.gorunum button').forEach(b => b.classList.toggle('secili', b.dataset.g === gorunum));
+  if (!l.length) { $('liste').innerHTML = `<div class="bos">${filtre === 'bekliyor' && !q ? '🎉 Kontrol bekleyen öğrenci kalmadı.' : 'Bu listede öğrenci yok.'}</div>`; return; }
+  $('liste').innerHTML = gorunum === 'liste'
+    ? `<div class="isim-liste"><div class="isim-ust"><span>${l.length} öğrenci · dokunarak işlem yapın</span><button class="btn kucuk" id="isimKopyala">Listeyi kopyala</button></div>${l.map((o, i) => isimSatir(o, i)).join('')}</div>`
+    : l.map(o => kart(o, kilitli)).join('');
+  $('isimKopyala')?.addEventListener('click', () => kopyalaMetin(l.filter(o => o.durum !== 'ayrildi').map((o, i) => `${i + 1}. ${o.ad}${o.no ? ' (' + o.no + ')' : ''}`).join('\n')));
 }
+
+const DURUM_IKON = { bekliyor: '', dogru: '✓', duzeltildi: '✎', ayrildi: '✕', yeni: '+' };
+function isimSatir(o, i) {
+  const d = DURUM[o.durum] || DURUM.bekliyor;
+  return `<button type="button" class="isim-satir ${o.durum}" data-id="${o.id}" data-i="menu">
+    <span class="isim-sira">${i + 1}</span>
+    <span class="isim-ad">${esc(o.ad)}<small>No: ${esc(o.no) || '—'}${!o.tel || !o.veli ? ' · <span style="color:var(--sari)">eksik bilgi</span>' : ''}</small></span>
+    <span class="isim-durum ${d.renk}" title="${d.ad}">${DURUM_IKON[o.durum] || ''}</span>
+  </button>`;
+}
+async function kopyalaMetin(m) {
+  try { await navigator.clipboard.writeText(m); tost('Liste kopyalandı', 'tamam'); }
+  catch { const t = document.createElement('textarea'); t.value = m; document.body.appendChild(t); t.select(); document.execCommand('copy'); t.remove(); tost('Liste kopyalandı', 'tamam'); }
+}
+document.querySelector('.gorunum').addEventListener('click', e => {
+  const b = e.target.closest('[data-g]'); if (!b) return;
+  gorunum = b.dataset.g; try { localStorage.setItem('gorunum', gorunum); } catch {}
+  ciz();
+});
+function islemMenusu(o) {
+  aktif = o;
+  const d = DURUM[o.durum] || DURUM.bekliyor;
+  $('islemAd').textContent = o.ad;
+  $('islemAlt').innerHTML = `No: ${esc(o.no) || '—'} · <span class="rozet ${d.renk}">${d.ad}</span>`;
+  $('islemBilgi').innerHTML = `<div>👤 ${o.veli ? esc(o.veli) : '<span class="eksik">Veli adı yok</span>'}</div>
+    <div>📞 ${o.tel ? `<a href="tel:0${esc(o.tel)}">${telGoster(o.tel)}</a>` : '<span class="eksik">Telefon yok</span>'}</div>`;
+  let b = '';
+  if (!sube.kilitli) {
+    if (o.durum === 'ayrildi') b = `<button class="btn" data-m="geri">${IKON.geri}Ayrıldı işaretini geri al</button>`;
+    else if (o.durum === 'yeni') b = `<button class="btn" data-m="duzelt">${IKON.kalem}Düzenle</button>`;
+    else b = `${o.durum === 'dogru' ? `<button class="btn" data-m="dogru">${IKON.geri}Onayı geri al</button>` : o.durum === 'duzeltildi' ? '' : `<button class="btn yesil" data-m="dogru">${IKON.onay}Bilgiler doğru</button>`}
+      <button class="btn" data-m="duzelt">${IKON.kalem}Bilgileri düzelt</button>
+      <button class="btn" data-m="ayril" style="color:var(--kirmizi)">${IKON.carpi}Sınıftan ayrıldı</button>`;
+  }
+  $('islemDugmeler').innerHTML = b;
+  ac('perdeIslem');
+}
+$('islemDugmeler').addEventListener('click', e => {
+  const b = e.target.closest('[data-m]'); if (!b || !aktif) return;
+  kapat('perdeIslem');
+  const o = aktif;
+  setTimeout(() => islemYap(o, b.dataset.m), 180);
+});
 
 function kart(o, kilitli) {
   const d = DURUM[o.durum] || DURUM.bekliyor;
@@ -398,9 +489,13 @@ $('cipler').addEventListener('click', e => { const b = e.target.closest('[data-f
 let araZaman; $('ara').addEventListener('input', e => { clearTimeout(araZaman); araZaman = setTimeout(() => { arama = e.target.value; ciz(); }, 150); });
 
 $('liste').addEventListener('click', e => {
+  if (e.target.closest('a')) return;   // telefon bağlantısı
   const b = e.target.closest('[data-i]'); if (!b) return;
   const o = ogrenciler.find(x => x.id === b.closest('[data-id]').dataset.id); if (!o) return;
-  const i = b.dataset.i;
+  islemYap(o, b.dataset.i);
+});
+function islemYap(o, i) {
+  if (i === 'menu') return islemMenusu(o);
   if (i === 'dogru') {
     if (o.durum === 'duzeltildi') return duzenAc(o);
     if (o.durum === 'dogru') return guncelle(o, { durum: 'bekliyor' }, 'Onay geri alındı');
@@ -410,7 +505,7 @@ $('liste').addEventListener('click', e => {
   if (i === 'duzelt') return duzenAc(o);
   if (i === 'ayril') { aktif = o; $('ayrilAd').textContent = `${o.ad} · No: ${o.no}`; ac('perdeAyril'); return; }
   if (i === 'geri') return guncelle(o, { durum: o.oncekiDurum && o.oncekiDurum !== 'ayrildi' ? o.oncekiDurum : 'bekliyor', oncekiDurum: null }, 'Geri alındı');
-});
+}
 
 // ---------- Kaydetme ----------
 async function guncelle(o, degisim, mesaj, islem) {

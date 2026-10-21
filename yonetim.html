@@ -8,9 +8,9 @@
 <title>Veli Bilgileri · Yönetim</title>
 <script>
 // Sürüm kontrolü: GitHub'a yeni dosya yüklenince tarayıcı önbelleğini atlayıp yeni sürümü açar.
-(function(){var V='6';fetch('surum.txt?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.text():''}).then(function(t){t=(t||'').trim();if(!t||t===V)return;var k='surum-'+t;try{if(sessionStorage.getItem(k))return;sessionStorage.setItem(k,'1')}catch(e){}var u=new URL(location.href);u.searchParams.set('v',t);location.replace(u.href)}).catch(function(){})})();
+(function(){var V='7';fetch('surum.txt?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.text():''}).then(function(t){t=(t||'').trim();if(!t||t===V)return;var k='surum-'+t;try{if(sessionStorage.getItem(k))return;sessionStorage.setItem(k,'1')}catch(e){}var u=new URL(location.href);u.searchParams.set('v',t);location.replace(u.href)}).catch(function(){})})();
 </script>
-<link rel="stylesheet" href="ortak.css?v=6">
+<link rel="stylesheet" href="ortak.css?v=7">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <style>
@@ -112,6 +112,103 @@
   .iki-sutun{display:grid;grid-template-columns:1.6fr 1fr;gap:16px}
   @media (max-width:900px){.iki-sutun{grid-template-columns:1fr}}
 
+  /* Üst düğmeler + alt gezinme */
+  .ust-dugmeler{display:flex;gap:8px}
+  .ust .btn svg{width:17px;height:17px}
+  .altnav{display:none}
+  .sube-cip{display:inline-block;background:var(--ana-acik);color:var(--ana-koyu);font-weight:800;border-radius:7px;padding:2px 8px;font-size:13px}
+  .mobil-etiket,.mobil-ikon{display:none}
+  .tablo.kartli tr.kartsatir{cursor:pointer}
+  .tel-link{color:var(--ana);font-weight:600;text-decoration:none}
+  .btn.wa{background:#e9f8ef;border-color:#bfe8cf;color:#128c3e}
+  .btn.wa svg{width:16px;height:16px}
+  .kilit-etiket{display:inline-flex;align-items:center;gap:8px}
+
+  @media (max-width:720px){
+    body{font-size:15px}
+    .ust-ic{padding:10px 14px 10px;padding-top:calc(10px + env(safe-area-inset-top))}
+    .ust-satir{flex-wrap:nowrap;gap:8px}
+    .ust h1{font-size:16px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .ust .btn{width:40px;height:40px;min-height:40px;padding:0}
+    .ust .btn .yazi{display:none}
+    .sekmeler{display:none}
+    main{padding:12px 12px calc(84px + env(safe-area-inset-bottom))}
+    .kutu{padding:14px;border-radius:14px;margin-bottom:12px}
+    h2{font-size:16px}
+
+    .altnav{display:grid;grid-template-columns:repeat(5,1fr);position:fixed;left:0;right:0;bottom:0;z-index:30;background:#fff;border-top:1px solid var(--cizgi);padding:4px 4px calc(4px + env(safe-area-inset-bottom));box-shadow:0 -4px 16px rgba(16,24,40,.06)}
+    .altnav button{position:relative;border:0;background:none;display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 0 5px;font-size:11.5px;font-weight:600;color:var(--cok-soluk);border-radius:10px}
+    .altnav button svg{width:23px;height:23px}
+    .altnav button.secili{color:var(--ana)}
+    .altnav button.secili svg{stroke-width:2.4}
+    .nokta-say{position:absolute;top:2px;left:calc(50% + 6px);background:var(--kirmizi);color:#fff;font-style:normal;font-size:10.5px;font-weight:800;border-radius:999px;padding:0 5px;min-width:17px;line-height:17px}
+    .nokta-say:empty{display:none}
+
+    /* Pano */
+    .istat{grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+    .istat div{padding:11px 13px;border-radius:12px}
+    .istat b{font-size:22px}
+    .istat span{font-size:12px}
+    .sinif-satir{grid-template-columns:1fr;gap:6px;margin-bottom:14px}
+    .sinif-etiket{text-align:left;padding:0}
+    .karolar{grid-template-columns:repeat(3,1fr);gap:6px}
+    .karo{padding:8px}
+    .karo .ks b{font-size:15px}
+    .karo .ko{font-size:11px}
+    .lejant{gap:10px}
+
+    /* Filtreler */
+    .filtreler{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .filtreler .girdi.ara{grid-column:1/-1;min-width:0}
+    .filtreler select,.filtreler .girdi{min-width:0;width:100%;font-size:15px;padding:10px}
+    .filtreler .btn{width:100%}
+    #dCipler{display:flex;overflow-x:auto;flex-wrap:nowrap;margin:0 -14px 12px;padding:0 14px 2px;scrollbar-width:none}
+    #dCipler .btn{flex:none;width:auto}
+
+    /* Öğrenci / değişiklik kartları */
+    .tablo.kartli tbody{display:grid;gap:8px}
+    .tablo.kartli tr.kartsatir{display:grid;grid-template-columns:auto auto 1fr auto;grid-template-areas:"ad ad ad durum" "sube no no no" "veli veli veli veli" "tel tel tel tel";gap:5px 8px;padding:12px 13px;border:1px solid var(--cizgi);border-radius:12px;background:#fff}
+    .tablo.kartli tr.kartsatir:active{background:#f6f8fc}
+    .tablo.kartli td{border:0;padding:0;background:none!important}
+    .tablo.kartli .c-ad{grid-area:ad;font-weight:700;font-size:15.5px}
+    .tablo.kartli .c-durum{grid-area:durum;text-align:right}
+    .tablo.kartli .c-sube{grid-area:sube}
+    .tablo.kartli .c-no{grid-area:no;color:var(--soluk);font-size:13px;align-self:center}
+    .tablo.kartli .c-veli{grid-area:veli;display:flex;gap:6px;align-items:flex-start}
+    .tablo.kartli .c-tel{grid-area:tel;display:flex;gap:6px;align-items:flex-start}
+    .tablo.kartli .c-islem{display:none}
+    .tablo.kartli .mobil-ikon{display:inline;font-size:13px;opacity:.75}
+    .tablo.kartli .mobil-etiket{display:inline}
+    .tablo.kartli .tel-link{font-size:15.5px}
+
+    /* Şube kartları */
+    .ayar-satir{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .ayar-satir .alan{grid-column:1/-1}
+    .ayar-satir .btn{width:100%;white-space:normal;font-size:13.5px;line-height:1.2}
+    .subeler-tablo tbody{display:grid;gap:10px}
+    .subeler-tablo tr.sube-satir{display:grid;grid-template-columns:1fr auto;grid-template-areas:"sube durum" "ogr ogr" "sifre kilit" "islem islem";gap:8px 10px;padding:12px 13px;border:1px solid var(--cizgi);border-radius:12px;background:#fff}
+    .subeler-tablo td{border:0;padding:0;background:none!important}
+    .subeler-tablo .s-sube{grid-area:sube}
+    .subeler-tablo .s-durum{grid-area:durum;text-align:right}
+    .subeler-tablo .s-ogr{grid-area:ogr}
+    .subeler-tablo .s-ogr .ogretmen-girdi{border-color:var(--cizgi);background:#fafbfd;padding:9px 10px;font-size:15px}
+    .subeler-tablo .s-sifre{grid-area:sifre;display:flex;align-items:center;gap:6px}
+    .subeler-tablo .s-kilit{grid-area:kilit;display:flex;align-items:center;justify-content:flex-end}
+    .subeler-tablo .mobil-etiket{display:inline;font-size:12px;color:var(--soluk);font-weight:600}
+    .subeler-tablo .s-islem{grid-area:islem}
+    .subeler-tablo .islemler{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+    .subeler-tablo .islemler .btn{width:100%;min-height:42px;padding:6px 4px;font-size:13px}
+    .subeler-tablo .islemler .btn.wa{grid-column:1/-1;min-height:46px;font-size:15px;background:#25d366;border-color:#25d366;color:#fff}
+    .subeler-tablo .islemler .btn.wa svg{width:20px;height:20px}
+    .subeler-tablo .islemler [data-tamamkaldir]{grid-column:1/-1}
+
+    /* Kurulum */
+    .adim{gap:10px}
+    .adim-no{width:28px;height:28px;font-size:14px}
+    textarea.girdi{min-height:160px}
+    #tost{bottom:calc(84px + env(safe-area-inset-bottom))}
+  }
+
   /* Yazdırma: şifre kartları */
   #yazdir{display:none}
   @media print{
@@ -151,9 +248,11 @@
     <div class="ust-ic">
       <div class="ust-satir">
         <h1>Veli Bilgi Güncelleme <small id="okulAdiUst"></small></h1>
-        <button class="btn" id="yenileBtn" title="Verileri yenile">↻ Yenile</button>
-        <button class="btn ana" id="excelBtn">⬇ Excel indir</button>
-        <button class="btn" id="cikisBtn">Çıkış</button>
+        <div class="ust-dugmeler">
+          <button class="btn" id="yenileBtn" title="Verileri yenile" aria-label="Yenile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg><span class="yazi">Yenile</span></button>
+          <button class="btn ana" id="excelBtn" title="Excel indir" aria-label="Excel indir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span class="yazi">Excel indir</span></button>
+          <button class="btn" id="cikisBtn" title="Çıkış" aria-label="Çıkış"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg><span class="yazi">Çıkış</span></button>
+        </div>
       </div>
       <nav class="sekmeler" id="sekmeler">
         <button class="sekme secili" data-s="pano">Pano</button>
@@ -209,7 +308,7 @@
         </div>
         <div class="soluk" id="oSayi" style="margin-bottom:8px"></div>
         <div class="tablo-kap">
-          <table class="tablo duyarli">
+          <table class="tablo duyarli kartli">
             <thead><tr><th>Şube</th><th>No</th><th>Öğrenci</th><th>Veli</th><th>Telefon</th><th>Durum</th><th></th></tr></thead>
             <tbody id="oGovde"></tbody>
           </table>
@@ -222,7 +321,7 @@
     <section id="s-degisim" class="gizli">
       <div class="kutu">
         <div class="filtreler" id="dCipler"></div>
-        <div class="tablo-kap"><table class="tablo duyarli"><thead id="dBas"></thead><tbody id="dGovde"></tbody></table></div>
+        <div class="tablo-kap"><table class="tablo duyarli kartli"><thead id="dBas"></thead><tbody id="dGovde"></tbody></table></div>
       </div>
     </section>
 
@@ -240,7 +339,7 @@
       <div class="kutu">
         <p class="soluk" style="margin:0 0 10px">Öğretmen adını tıklayıp değiştirebilirsiniz. <b>WhatsApp</b> düğmesi hazır mesajı açar; kişiyi siz seçersiniz. Kilitli şubede öğretmen sadece görüntüleyebilir.</p>
         <div class="tablo-kap">
-          <table class="tablo duyarli">
+          <table class="tablo duyarli subeler-tablo">
             <thead><tr><th>Şube</th><th>Öğretmen</th><th>Şifre</th><th>İlerleme</th><th>Kilit</th><th>İşlemler</th></tr></thead>
             <tbody id="sGovde"></tbody>
           </table>
@@ -288,6 +387,14 @@
       </div>
     </section>
   </main>
+
+  <nav class="altnav" id="altnav">
+    <button data-s="pano" class="secili"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Pano</button>
+    <button data-s="ogrenci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Öğrenciler</button>
+    <button data-s="degisim"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>Değişen<i class="nokta-say" id="sayDeg2"></i></button>
+    <button data-s="sube"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Şubeler</button>
+    <button data-s="kurulum"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Kurulum</button>
+  </nav>
 </div>
 
 <!-- ============ ÖĞRENCİ DÜZENLE ============ -->
@@ -332,7 +439,7 @@
 <script type="module">
 import { baglan, firebaseConfig, OKUL_ADI, SUBE_ALANI, TUM_SUBELER, subeAnahtari, subeAdi, subeExcel, subeSira, subeEposta,
   baslikYap, telTemizle, telGecerli, telGoster, noTemizle, esc, aramaMetni, DURUM, durumHesapla, degisenAlanlar,
-  sifreUret, hataMesaji, tost, tarihGoster } from './ortak.js?v=6';
+  sifreUret, hataMesaji, tost, tarihGoster } from './ortak.js?v=7';
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged, initializeAuth, inMemoryPersistence,
   createUserWithEmailAndPassword, updatePassword } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
@@ -413,13 +520,13 @@ $('yenileBtn').onclick = async () => {
 
 // ================= SEKME =================
 let sekme = 'pano';
-$('sekmeler').addEventListener('click', e => {
+['sekmeler', 'altnav'].forEach(id => $(id).addEventListener('click', e => {
   const b = e.target.closest('[data-s]'); if (!b) return;
   sekmeAc(b.dataset.s);
-});
+}));
 function sekmeAc(s) {
   sekme = s;
-  document.querySelectorAll('.sekme').forEach(x => x.classList.toggle('secili', x.dataset.s === s));
+  document.querySelectorAll('.sekme, .altnav button').forEach(x => x.classList.toggle('secili', x.dataset.s === s));
   document.querySelectorAll('main>section').forEach(x => x.classList.toggle('gizli', x.id !== 's-' + s));
   ciz();
   window.scrollTo(0, 0);
@@ -458,6 +565,7 @@ function ciz() {
   const g = genelOzet();
   $('sayOgr').textContent = g.toplam - g.ayrildi;
   $('sayDeg').textContent = g.duzeltildi + g.ayrildi + g.yeni;
+  $('sayDeg2').textContent = (g.duzeltildi + g.ayrildi + g.yeni) || '';
   if (sekme === 'pano') cizPano(g);
   if (sekme === 'ogrenci') cizOgrenci();
   if (sekme === 'degisim') cizDegisim();
@@ -551,18 +659,18 @@ function cizOgrenci() {
 function eskiYaz(o, a, f = x => x) { return (o.orj && (o.orj[a] || '') !== (o[a] || '')) ? `<span class="eski">${esc(f(o.orj[a] || '')) || '(boş)'}</span>` : ''; }
 function satirOgr(o) {
   const d = DURUM[o.durum] || DURUM.bekliyor;
-  return `<tr class="${o.durum}">
-    <td data-e="Şube"><b>${subeAdi(o.sk)}</b>${o.orj?.sk && o.orj.sk !== o.sk ? `<span class="eski">${subeAdi(o.orj.sk)}</span>` : ''}</td>
-    <td data-e="No" class="sayi">${esc(o.no)}${eskiYaz(o, 'no')}</td>
-    <td data-e="Öğrenci" class="ad genis">${esc(o.ad)}${eskiYaz(o, 'ad')}</td>
-    <td data-e="Veli">${o.veli ? esc(o.veli) : '<span class="eksik">yok</span>'}${eskiYaz(o, 'veli')}</td>
-    <td data-e="Telefon" class="sayi">${o.tel ? telGoster(o.tel) : '<span class="eksik">yok</span>'}${eskiYaz(o, 'tel', telGoster)}</td>
-    <td data-e="Durum"><span class="rozet ${d.renk}">${d.kisa}</span></td>
-    <td><button class="btn kucuk" data-duzen="${o.id}">Düzenle</button></td>
+  return `<tr class="${o.durum} kartsatir" data-duzen="${o.id}">
+    <td class="c-sube"><span class="sube-cip">${subeAdi(o.sk)}</span>${o.orj?.sk && o.orj.sk !== o.sk ? `<span class="eski">${subeAdi(o.orj.sk)}</span>` : ''}</td>
+    <td class="c-no sayi"><span class="mobil-etiket">No </span>${esc(o.no)}${eskiYaz(o, 'no')}</td>
+    <td class="c-ad ad">${esc(o.ad)}${eskiYaz(o, 'ad')}</td>
+    <td class="c-veli"><span class="mobil-ikon">👤</span>${o.veli ? esc(o.veli) : '<span class="eksik">Veli adı yok</span>'}${eskiYaz(o, 'veli')}</td>
+    <td class="c-tel sayi"><span class="mobil-ikon">📞</span>${o.tel ? `<a class="tel-link" href="tel:0${esc(o.tel)}">${telGoster(o.tel)}</a>` : '<span class="eksik">Telefon yok</span>'}${eskiYaz(o, 'tel', telGoster)}</td>
+    <td class="c-durum"><span class="rozet ${d.renk}">${d.kisa}</span></td>
+    <td class="c-islem"><button class="btn kucuk">Düzenle</button></td>
   </tr>`;
 }
 ['oAra','oSube','oDurum'].forEach(id => $(id).addEventListener('input', () => { oLimit = 400; cizOgrenci(); }));
-$('oGovde').addEventListener('click', e => { const b = e.target.closest('[data-duzen]'); if (b) ogrAc(ogrenciler.find(o => o.id === b.dataset.duzen)); });
+$('oGovde').addEventListener('click', e => { if (e.target.closest('a')) return; const b = e.target.closest('[data-duzen]'); if (b) ogrAc(ogrenciler.find(o => o.id === b.dataset.duzen)); });
 $('oEkle').onclick = () => ogrAc(null);
 $('oIndir').onclick = () => {
   const l = oFiltrele();
@@ -664,23 +772,23 @@ function cizDegisim() {
       return e === y ? esc(f(y)) || '—' : `<span class="eski">${esc(f(e)) || '(boş)'}</span><span class="degisti">${esc(f(y)) || '(boş)'}</span>`;
     };
     const ad = { sk: 'şube', no: 'okul no', ad: 'ad', veli: 'veli', tel: 'telefon' };
-    $('dGovde').innerHTML = l.map(o => `<tr>
-      <td data-e="Şube"><b>${subeAdi(o.sk)}</b>${o.orj?.sk && o.orj.sk !== o.sk ? `<span class="eski">${subeAdi(o.orj.sk)}</span>` : ''}</td>
-      <td data-e="No" class="sayi">${ok(o, 'no')}</td><td data-e="Öğrenci" class="genis">${ok(o, 'ad')}</td>
-      <td data-e="Veli">${ok(o, 'veli')}</td><td data-e="Telefon" class="sayi">${ok(o, 'tel', telGoster)}</td>
-      <td data-e="Değişen">${degisenAlanlar(o).map(a => `<span class="rozet mavi">${ad[a]}</span>`).join(' ')}</td>
-      <td><button class="btn kucuk" data-duzen="${o.id}">Düzenle</button></td></tr>`).join('') || bosSatir(7);
+    $('dGovde').innerHTML = l.map(o => `<tr class="kartsatir" data-duzen="${o.id}">
+      <td class="c-sube"><span class="sube-cip">${subeAdi(o.sk)}</span>${o.orj?.sk && o.orj.sk !== o.sk ? `<span class="eski">${subeAdi(o.orj.sk)}</span>` : ''}</td>
+      <td class="c-no sayi"><span class="mobil-etiket">No </span>${ok(o, 'no')}</td><td class="c-ad ad">${ok(o, 'ad')}</td>
+      <td class="c-veli"><span class="mobil-ikon">👤</span><div>${ok(o, 'veli')}</div></td><td class="c-tel sayi"><span class="mobil-ikon">📞</span><div>${ok(o, 'tel', telGoster)}</div></td>
+      <td class="c-durum">${degisenAlanlar(o).map(a => `<span class="rozet mavi">${ad[a]}</span>`).join(' ')}</td>
+      <td class="c-islem"><button class="btn kucuk">Düzenle</button></td></tr>`).join('') || bosSatir(7);
   } else {
     $('dBas').innerHTML = '<tr><th>Şube</th><th>No</th><th>Öğrenci</th><th>Veli</th><th>Telefon</th><th></th></tr>';
-    $('dGovde').innerHTML = l.map(o => `<tr>
-      <td data-e="Şube"><b>${subeAdi(o.sk)}</b></td><td data-e="No" class="sayi">${esc(o.no)}</td><td data-e="Öğrenci" class="genis">${esc(o.ad)}</td>
-      <td data-e="Veli">${o.veli ? esc(o.veli) : '<span class="eksik">yok</span>'}</td><td data-e="Telefon" class="sayi">${o.tel ? telGoster(o.tel) : '<span class="eksik">yok</span>'}</td>
-      <td><button class="btn kucuk" data-duzen="${o.id}">Düzenle</button></td></tr>`).join('') || bosSatir(6);
+    $('dGovde').innerHTML = l.map(o => `<tr class="kartsatir" data-duzen="${o.id}">
+      <td class="c-sube"><span class="sube-cip">${subeAdi(o.sk)}</span></td><td class="c-no sayi"><span class="mobil-etiket">No </span>${esc(o.no)}</td><td class="c-ad ad">${esc(o.ad)}</td>
+      <td class="c-veli"><span class="mobil-ikon">👤</span>${o.veli ? esc(o.veli) : '<span class="eksik">Veli adı yok</span>'}</td><td class="c-tel sayi"><span class="mobil-ikon">📞</span>${o.tel ? `<a class="tel-link" href="tel:0${esc(o.tel)}">${telGoster(o.tel)}</a>` : '<span class="eksik">Telefon yok</span>'}</td>
+      <td class="c-islem"><button class="btn kucuk">Düzenle</button></td></tr>`).join('') || bosSatir(6);
   }
 }
 const bosSatir = n => `<tr><td colspan="${n}" class="soluk" style="text-align:center;padding:30px">Kayıt yok.</td></tr>`;
 $('dCipler').addEventListener('click', e => { const b = e.target.closest('[data-d]'); if (b) { dTur = b.dataset.d; cizDegisim(); } });
-$('dGovde').addEventListener('click', e => { const b = e.target.closest('[data-duzen]'); if (b) ogrAc(ogrenciler.find(o => o.id === b.dataset.duzen)); });
+$('dGovde').addEventListener('click', e => { if (e.target.closest('a')) return; const b = e.target.closest('[data-duzen]'); if (b) ogrAc(ogrenciler.find(o => o.id === b.dataset.duzen)); });
 
 // ---------- Şubeler ----------
 function mesajMetni(sk) {
@@ -693,16 +801,16 @@ function cizSube() {
   $('sGovde').innerHTML = tumSkler().map(sk => {
     const s = subeler[sk] || {}; const r = subeOzet(sk);
     const durum = r.durum === 'tamam' ? `<span class="rozet yesil">✓ Tamamlandı</span>` : r.durum === 'devam' ? `<span class="rozet mavi">%${r.yuzde} · ${r.bekliyor} bekliyor</span>` : `<span class="rozet gri">Başlamadı</span>`;
-    return `<tr data-sk="${sk}">
-      <td data-e="Şube"><b style="font-size:16px">${subeAdi(sk)}</b><div class="soluk" style="font-size:12px">${r.guncel} öğrenci</div></td>
-      <td data-e="Öğretmen" class="genis"><input class="ogretmen-girdi" value="${esc(s.ogretmen || '')}" placeholder="Öğretmen adı" data-ogr></td>
-      <td data-e="Şifre"><span class="sifre-hucre" data-sifre>${sifreler[sk] ? '••••••' : '<span class="eksik">hesap yok</span>'}</span>
+    return `<tr data-sk="${sk}" class="sube-satir">
+      <td class="s-sube"><b style="font-size:16px">${subeAdi(sk)}</b><div class="soluk" style="font-size:12px">${r.guncel} öğrenci</div></td>
+      <td class="s-ogr"><input class="ogretmen-girdi" value="${esc(s.ogretmen || '')}" placeholder="Öğretmen adı" data-ogr aria-label="Öğretmen adı"></td>
+      <td class="s-sifre"><span class="mobil-etiket">Şifre</span><span class="sifre-hucre" data-sifre>${sifreler[sk] ? '••••••' : '<span class="eksik">hesap yok</span>'}</span>
         ${sifreler[sk] ? `<button class="btn kucuk hayalet" data-goster title="Göster">👁</button>` : ''}</td>
-      <td data-e="İlerleme">${durum}${s.tamamlandi ? `<div class="soluk" style="font-size:12px;margin-top:3px">${tarihGoster(s.tamamTarih)}</div>` : ''}</td>
-      <td data-e="Kilit"><label class="anahtar"><input type="checkbox" data-kilit ${s.kilitli ? 'checked' : ''}><i></i></label></td>
-      <td class="genis"><div class="islemler">
-        <a class="btn kucuk" style="color:#128c3e" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(mesajMetni(sk))}" ${sifreler[sk] ? '' : 'aria-disabled="true" onclick="return false" style="opacity:.4"'}>WhatsApp</a>
-        <button class="btn kucuk" data-kopya>Mesajı kopyala</button>
+      <td class="s-durum">${durum}${s.tamamlandi ? `<div class="soluk" style="font-size:12px;margin-top:3px">${tarihGoster(s.tamamTarih)}</div>` : ''}</td>
+      <td class="s-kilit"><label class="kilit-etiket"><span class="mobil-etiket">Kilit</span><span class="anahtar"><input type="checkbox" data-kilit ${s.kilitli ? 'checked' : ''}><i></i></span></label></td>
+      <td class="s-islem"><div class="islemler">
+        <a class="btn kucuk wa" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(mesajMetni(sk))}" ${sifreler[sk] ? '' : 'aria-disabled="true" onclick="return false" style="opacity:.4"'}><svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.47 14.38c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.64.07-.3-.15-1.26-.46-2.4-1.48-.89-.79-1.49-1.77-1.66-2.07-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.67-1.61-.92-2.21-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48s1.07 2.88 1.21 3.08c.15.2 2.1 3.2 5.08 4.49.71.31 1.26.49 1.69.63.71.23 1.36.19 1.87.12.57-.09 1.76-.72 2.01-1.41.25-.69.25-1.29.17-1.41-.07-.13-.27-.2-.57-.35zM12.04 21.5h-.01a9.45 9.45 0 0 1-4.82-1.32l-.35-.21-3.58.94.96-3.49-.23-.36a9.43 9.43 0 0 1-1.45-5.03c0-5.22 4.25-9.46 9.48-9.46a9.4 9.4 0 0 1 6.7 2.78 9.4 9.4 0 0 1 2.77 6.7c0 5.22-4.25 9.46-9.47 9.46z"/></svg>WhatsApp</a>
+        <button class="btn kucuk" data-kopya>Kopyala</button>
         <button class="btn kucuk" data-sifreyenile>Şifre yenile</button>
         ${s.tamamlandi ? `<button class="btn kucuk" data-tamamkaldir title="Öğretmen yeniden tamamlasın">Tamamlandı'yı kaldır</button>` : ''}
       </div></td></tr>`;
@@ -1013,8 +1121,8 @@ function xSayfa(wb, ad, { baslik, alt, kolonlar, satirlar, durumlar, toplam, yat
 }
 
 $('excelBtn').onclick = async () => {
-  const btn = $('excelBtn'); const eski = btn.textContent;
-  btn.disabled = true; btn.textContent = 'Hazırlanıyor…';
+  const btn = $('excelBtn'); const eski = btn.innerHTML;
+  btn.disabled = true; btn.innerHTML = '<span class="donen" style="width:16px;height:16px;border-width:2px;margin:0"></span><span class="yazi">Hazırlanıyor…</span>';
   try {
     await excelJSYukle();
     const wb = new ExcelJS.Workbook();
@@ -1096,7 +1204,7 @@ $('excelBtn').onclick = async () => {
     setTimeout(() => URL.revokeObjectURL(a.href), 5000);
     tost('Excel hazırlandı', 'tamam');
   } catch (err) { tost(hataMesaji(err), 'hata'); }
-  finally { btn.disabled = false; btn.textContent = eski; }
+  finally { btn.disabled = false; btn.innerHTML = eski; }
 };
 </script>
 </body>
