@@ -8,9 +8,9 @@
 <title>Veli Bilgi Güncelleme</title>
 <script>
 // Sürüm kontrolü: GitHub'a yeni dosya yüklenince tarayıcı önbelleğini atlayıp yeni sürümü açar.
-(function(){var V='13';var u=new URL(location.href);fetch('surum.txt?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.text():''}).then(function(t){t=(t||'').trim();if(!t)return;if(t===V){if(u.searchParams.has('yv')){u.searchParams.delete('yv');u.searchParams.delete('r');history.replaceState(null,'',u.pathname+u.search+u.hash)}return}var once=Number(u.searchParams.get('r')||0);if(u.searchParams.get('yv')===t&&Date.now()-once<60000)return;u.searchParams.set('yv',t);u.searchParams.set('r',Date.now());location.replace(u.href)}).catch(function(){})})();
+(function(){var V='14';var u=new URL(location.href);fetch('surum.txt?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.text():''}).then(function(t){t=(t||'').trim();if(!t)return;if(t===V){if(u.searchParams.has('yv')){u.searchParams.delete('yv');u.searchParams.delete('r');history.replaceState(null,'',u.pathname+u.search+u.hash)}return}var once=Number(u.searchParams.get('r')||0);if(u.searchParams.get('yv')===t&&Date.now()-once<60000)return;u.searchParams.set('yv',t);u.searchParams.set('r',Date.now());location.replace(u.href)}).catch(function(){})})();
 </script>
-<link rel="stylesheet" href="ortak.css?v=13">
+<link rel="stylesheet" href="ortak.css?v=14">
 <style>
   /* ---------- Üst bant ---------- */
   .ust{position:sticky;top:0;z-index:20;background:var(--ana);color:#fff;padding:12px 16px 14px;padding-top:calc(12px + env(safe-area-inset-top))}
@@ -196,6 +196,8 @@
     <label class="alan" id="alanAd"><span>Öğrenci adı soyadı</span><input id="fAd" autocomplete="off" autocapitalize="words"><small></small></label>
     <label class="alan" id="alanVeli"><span>Veli adı soyadı</span><input id="fVeli" autocomplete="off" autocapitalize="words"><small></small></label>
     <label class="alan" id="alanTel"><span>Veli telefonu</span><input id="fTel" type="tel" inputmode="tel" placeholder="5XX XXX XX XX" autocomplete="off"><small>Başında 0 olmadan 10 hane (5 ile başlar)</small></label>
+    <label class="devamsiz-kutu"><input type="checkbox" id="fDevamsiz"><span><b>Sürekli devamsız</b><small>Okula düzenli gelmeyen ya da ailesine ulaşılamayan öğrenci</small></span></label>
+    <label class="alan gizli" id="alanDevNot"><span>Devamsızlık açıklaması <small style="display:inline;font-weight:500;color:var(--cok-soluk)">(isteğe bağlı)</small></span><input id="fDevNot" maxlength="120" placeholder="ör. yurt dışında, adres değişti, ulaşılamıyor" autocomplete="off"><small></small></label>
     <div class="dugmeler">
       <button type="button" class="btn" data-kapat>Vazgeç</button>
       <button type="submit" class="btn ana" id="duzenKaydet">Kaydet</button>
@@ -247,7 +249,7 @@
 <script type="module">
 import { baglan, OZEL_ADLAR, ozelMi, OKUL_ADI, SUBE_ALANI, TUM_SUBELER, subeAnahtari, subeAdi, subeEposta,
   baslikYap, telTemizle, telGecerli, telGoster, noTemizle, esc, aramaMetni, DURUM, durumHesapla,
-  hataMesaji, tost } from './ortak.js?v=13';
+  hataMesaji, tost } from './ortak.js?v=14';
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { collection, doc, getDoc, getDocs, query, where, updateDoc, addDoc, deleteDoc, serverTimestamp, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
@@ -392,7 +394,7 @@ async function yukle() {
 // ---------- Çizim ----------
 const sirala = (a, b) => (a.ad || '').localeCompare(b.ad || '', 'tr');
 function sayilar() {
-  const c = { tumu: 0, bekliyor: 0, degisen: 0, ayrildi: 0, yeni: 0, dogru: 0, eksik: 0 };
+  const c = { tumu: 0, bekliyor: 0, degisen: 0, ayrildi: 0, yeni: 0, dogru: 0, eksik: 0, devamsiz: 0 };
   for (const o of ogrenciler) {
     c.tumu++;
     if (o.durum === 'bekliyor') c.bekliyor++;
@@ -401,6 +403,7 @@ function sayilar() {
     if (o.durum === 'yeni') c.yeni++;
     if (o.durum === 'dogru') c.dogru++;
     if (o.durum !== 'ayrildi' && (!o.tel || !o.veli)) c.eksik++;
+    if (o.durum !== 'ayrildi' && o.devamsiz) c.devamsiz++;
   }
   return c;
 }
@@ -423,13 +426,13 @@ function ciz() {
   if (kilitli) s += `<div class="serit kilit">🔒 Bu şube yönetici tarafından düzenlemeye kapatıldı. Değişiklik için idareyle görüşün.</div>`;
   else if (sube.tamamlandi) s += `<div class="serit tamam">✓ Listenizi tamamlayıp gönderdiniz. Teşekkürler! Gerekirse düzenlemeye devam edebilirsiniz.</div>`;
   let ipucuGizli = false; try { ipucuGizli = localStorage.getItem('ipucu-gizle') === '1'; } catch {}
-  if (!kilitli && !sube.tamamlandi && !ipucuGizli) s += `<div class="ipucu"><b>Nasıl yapılır?</b>Bilgisi doğru olan öğrenci için <b style="display:inline">✓ Doğru</b>’ya, yanlışsa <b style="display:inline">Düzelt</b>’e basın. Ayrılanları işaretleyin, yeni gelenleri alttan ekleyin. Telefon numarasına dokunarak veliyi arayabilirsiniz.<button aria-label="Kapat" id="ipucuKapat">×</button></div>`;
+  if (!kilitli && !sube.tamamlandi && !ipucuGizli) s += `<div class="ipucu"><b>Nasıl yapılır?</b>Bilgisi doğru olan öğrenci için <b style="display:inline">✓ Doğru</b>’ya, yanlışsa <b style="display:inline">Düzelt</b>’e basın. Ayrılanları işaretleyin, yeni gelenleri alttan ekleyin. Sürekli devamsız öğrencileri <b style="display:inline">Düzelt</b> ekranından işaretleyebilirsiniz. Telefon numarasına dokunarak veliyi arayabilirsiniz.<button aria-label="Kapat" id="ipucuKapat">×</button></div>`;
   $('seritler').innerHTML = s;
   $('ipucuKapat')?.addEventListener('click', () => { try { localStorage.setItem('ipucu-gizle', '1'); } catch {} ciz(); });
   $('altCubuk').classList.toggle('gizli', kilitli);
 
   // çipler
-  const cipler = [['tumu','Tümü',c.tumu],['bekliyor','Kontrol bekleyen',c.bekliyor],['degisen','Düzeltilen',c.degisen],['ayrildi','Ayrılan',c.ayrildi],['yeni','Yeni gelen',c.yeni],['eksik','Eksik bilgi',c.eksik]];
+  const cipler = [['tumu','Tümü',c.tumu],['bekliyor','Kontrol bekleyen',c.bekliyor],['degisen','Düzeltilen',c.degisen],['ayrildi','Ayrılan',c.ayrildi],['yeni','Yeni gelen',c.yeni],['eksik','Eksik bilgi',c.eksik],['devamsiz','Sürekli devamsız',c.devamsiz]];
   $('cipler').innerHTML = cipler.filter(([k,,n]) => k === 'tumu' || k === 'bekliyor' || n > 0)
     .map(([k, ad, n]) => `<button class="cip ${filtre === k ? 'secili' : ''}" data-f="${k}">${ad}<b>${n}</b></button>`).join('');
 
@@ -447,6 +450,7 @@ function ciz() {
     if (filtre === 'ayrildi' && o.durum !== 'ayrildi') return false;
     if (filtre === 'yeni' && o.durum !== 'yeni') return false;
     if (filtre === 'eksik' && !(o.durum !== 'ayrildi' && (!o.tel || !o.veli))) return false;
+    if (filtre === 'devamsiz' && !(o.durum !== 'ayrildi' && o.devamsiz)) return false;
     if (q && !aramaMetni(`${o.ad} ${o.veli} ${o.no} ${o.tel}`).includes(q)) return false;
     return true;
   });
@@ -465,7 +469,7 @@ function isimSatir(o, i) {
   const d = DURUM[o.durum] || DURUM.bekliyor;
   return `<button type="button" class="isim-satir ${o.durum}" data-id="${o.id}" data-i="menu">
     <span class="isim-sira">${i + 1}</span>
-    <span class="isim-ad">${esc(o.ad)}<small>No: ${esc(o.no) || '—'}${!o.tel || !o.veli ? ' · <span style="color:var(--sari)">eksik bilgi</span>' : ''}</small></span>
+    <span class="isim-ad">${esc(o.ad)}<small>No: ${esc(o.no) || '—'}${!o.tel || !o.veli ? ' · <span style="color:var(--sari)">eksik bilgi</span>' : ''}${o.devamsiz && o.durum !== 'ayrildi' ? ' · <span style="color:#c2410c;font-weight:700">devamsız</span>' : ''}</small></span>
     <span class="isim-durum ${d.renk}" title="${d.ad}">${DURUM_IKON[o.durum] || ''}</span>
   </button>`;
 }
@@ -482,7 +486,7 @@ function islemMenusu(o) {
   aktif = o;
   const d = DURUM[o.durum] || DURUM.bekliyor;
   $('islemAd').textContent = o.ad;
-  $('islemAlt').innerHTML = `No: ${esc(o.no) || '—'} · <span class="rozet ${d.renk}">${d.ad}</span>`;
+  $('islemAlt').innerHTML = `No: ${esc(o.no) || '—'} · <span class="rozet ${d.renk}">${d.ad}</span>${o.devamsiz ? ' <span class="rozet turuncu">Sürekli devamsız</span>' : ''}${o.devamsizNot ? `<br><small>${esc(o.devamsizNot)}</small>` : ''}`;
   $('islemBilgi').innerHTML = `<div>👤 ${o.veli ? esc(o.veli) : '<span class="eksik">Veli adı yok</span>'}</div>
     <div>📞 ${o.tel ? `<a href="tel:0${esc(o.tel)}">${telGoster(o.tel)}</a>` : '<span class="eksik">Telefon yok</span>'}</div>`;
   let b = '';
@@ -491,6 +495,7 @@ function islemMenusu(o) {
     else if (o.durum === 'yeni') b = `<button class="btn" data-m="duzelt">${IKON.kalem}Düzenle</button>`;
     else b = `${o.durum === 'dogru' ? `<button class="btn" data-m="dogru">${IKON.geri}Onayı geri al</button>` : o.durum === 'duzeltildi' ? '' : `<button class="btn yesil" data-m="dogru">${IKON.onay}Bilgiler doğru</button>`}
       <button class="btn" data-m="duzelt">${IKON.kalem}Bilgileri düzelt</button>
+      <button class="btn" data-m="devamsiz" style="color:#c2410c">${o.devamsiz ? '↺ Devamsız işaretini kaldır' : '⏸ Sürekli devamsız olarak işaretle'}</button>
       <button class="btn" data-m="ayril" style="color:var(--kirmizi)">${IKON.carpi}Sınıftan ayrıldı</button>`;
   }
   $('islemDugmeler').innerHTML = b;
@@ -517,11 +522,12 @@ function kart(o, kilitli) {
                   <button class="btn ayril" data-i="ayril">${IKON.carpi}Ayrıldı</button>`;
   }
   return `<article class="ogr ${o.durum}" data-id="${o.id}">
-    <div class="ogr-ust"><span class="ogr-no">${esc(o.no) || '—'}</span><div class="ogr-ad">${esc(o.ad)}${eskiGoster('ad')}</div><span class="rozet ${d.renk}">${d.kisa}</span></div>
+    <div class="ogr-ust"><span class="ogr-no">${esc(o.no) || '—'}</span><div class="ogr-ad">${esc(o.ad)}${eskiGoster('ad')}</div><span style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">${o.devamsiz && o.durum !== 'ayrildi' ? '<span class="rozet turuncu">Devamsız</span>' : ''}<span class="rozet ${d.renk}">${d.kisa}</span></span></div>
     <div class="ogr-bilgi">
       <div class="satir">${IKON.kisi}<div>${veli}${eskiGoster('veli')}</div></div>
       <div class="satir">${IKON.tel}<div>${tel}${eskiGoster('tel')}</div></div>
       ${o.orj && (o.orj.no || '') !== (o.no || '') ? `<div class="satir" style="font-size:12.5px">Eski okul no: <s>${esc(o.orj.no)}</s></div>` : ''}
+      ${o.devamsiz && o.devamsizNot ? `<div class="satir" style="font-size:13px;color:#c2410c">⏸ ${esc(o.devamsizNot)}</div>` : ''}
     </div>
     ${islem ? `<div class="ogr-islem">${islem}</div>` : ''}
   </article>`;
@@ -538,6 +544,10 @@ $('liste').addEventListener('click', e => {
 });
 function islemYap(o, i) {
   if (i === 'menu') return islemMenusu(o);
+  if (i === 'devamsiz') {
+    if (o.devamsiz) return guncelle(o, { devamsiz: false, devamsizNot: '' }, 'Devamsız işareti kaldırıldı', 'devamsiz-kaldir');
+    return duzenAc(o, 'Sürekli devamsız işaretini ve isterseniz kısa bir açıklama girip Kaydet’e basın.', true);
+  }
   if (i === 'dogru') {
     if (o.durum === 'duzeltildi') return duzenAc(o);
     if (o.durum === 'dogru') return guncelle(o, { durum: 'bekliyor' }, 'Onay geri alındı');
@@ -589,7 +599,7 @@ function alanHata(id, m) {
   if (id === 'alanTel') sm.textContent = m || 'Başında 0 olmadan 10 hane (5 ile başlar)';
   else sm.textContent = m || '';
 }
-function duzenAc(o, not) {
+function duzenAc(o, not, devamsizAc) {
   aktif = o;
   ['alanNo','alanAd','alanVeli','alanTel'].forEach(a => alanHata(a, ''));
   $('duzenBaslik').textContent = o ? 'Bilgileri düzelt' : 'Yeni öğrenci ekle';
@@ -599,11 +609,16 @@ function duzenAc(o, not) {
   $('fAd').value = o?.ad || '';
   $('fVeli').value = o?.veli || '';
   $('fTel').value = o?.tel || '';
+  $('fDevamsiz').checked = !!o?.devamsiz;
+  $('fDevNot').value = o?.devamsizNot || '';
+  if (devamsizAc) $('fDevamsiz').checked = true;
+  $('alanDevNot').classList.toggle('gizli', !$('fDevamsiz').checked);
   $('yeniSilBtn').classList.toggle('gizli', !(o && o.durum === 'yeni'));
   ac('perdeDuzen');
-  setTimeout(() => $(o ? (not ? (!o.veli ? 'fVeli' : 'fTel') : 'fTel') : 'fNo').focus(), 250);
+  setTimeout(() => $(devamsizAc ? 'fDevNot' : o ? (not ? (!o.veli ? 'fVeli' : 'fTel') : 'fTel') : 'fNo').focus(), 250);
 }
 $('yeniBtn').onclick = () => duzenAc(null);
+$('fDevamsiz').addEventListener('change', () => { $('alanDevNot').classList.toggle('gizli', !$('fDevamsiz').checked); if ($('fDevamsiz').checked) setTimeout(() => $('fDevNot').focus(), 50); });
 $('fTel').addEventListener('blur', () => { const t = telTemizle($('fTel').value); if (t) $('fTel').value = t; });
 
 let bosOnay = false;
@@ -615,6 +630,7 @@ $('duzenForm').addEventListener('submit', async e => {
     veli: baslikYap($('fVeli').value),
     tel: telTemizle($('fTel').value),
   };
+  const dev = { devamsiz: $('fDevamsiz').checked, devamsizNot: $('fDevamsiz').checked ? $('fDevNot').value.trim() : '' };
   let hata = false;
   ['alanNo','alanAd','alanVeli','alanTel'].forEach(a => alanHata(a, ''));
   if (v.no && ogrenciler.some(x => x.id !== aktif?.id && x.no === v.no && x.durum !== 'ayrildi')) { alanHata('alanNo', 'Bu numara sınıfta başka bir öğrencide kayıtlı'); hata = true; }
@@ -630,10 +646,13 @@ $('duzenForm').addEventListener('submit', async e => {
   bosOnay = false;
   kapat('perdeDuzen');
   if (aktif) {
-    const durum = durumHesapla(aktif, v);
-    guncelle(aktif, { ...v, durum }, durum === 'duzeltildi' ? 'Düzeltme kaydedildi' : 'Kaydedildi', durum === 'yeni' ? 'yeni-duzenle' : durum);
+    const devDegisti = !!aktif.devamsiz !== dev.devamsiz;
+    const alanDegisti = ['no', 'ad', 'veli', 'tel'].some(k => (v[k] || '') !== (aktif[k] || ''));
+    // Yalnızca devamsızlık işaretlendiyse doğrulama durumu değişmez
+    const durum = devDegisti && !alanDegisti ? aktif.durum : durumHesapla(aktif, v);
+    guncelle(aktif, { ...v, ...dev, durum }, durum === 'duzeltildi' ? 'Düzeltme kaydedildi' : 'Kaydedildi', devDegisti ? (dev.devamsiz ? 'devamsiz' : 'devamsiz-kaldir') : durum === 'yeni' ? 'yeni-duzenle' : durum);
   } else {
-    const yeni = { sk, ...v, durum: 'yeni', orj: null };
+    const yeni = { sk, ...v, ...dev, durum: 'yeni', orj: null };
     try {
       const ref = await addDoc(collection(db, 'ogrenciler'), { ...yeni, guncel: serverTimestamp() });
       const o = { id: ref.id, ...yeni };
@@ -662,7 +681,7 @@ $('tamamlaBtn').onclick = () => {
   const c = sayilar();
   $('tamamOzet').innerHTML = [
     ['✓ Bilgisi doğru', c.dogru], ['✎ Düzeltilen', c.degisen], ['✗ Ayrılan', c.ayrildi], ['＋ Yeni gelen', c.yeni],
-    ['Güncel mevcut', c.tumu - c.ayrildi], ...(c.eksik ? [['⚠ Eksik bilgisi olan', c.eksik]] : [])
+    ['Güncel mevcut', c.tumu - c.ayrildi], ...(c.devamsiz ? [['⏸ Sürekli devamsız', c.devamsiz]] : []), ...(c.eksik ? [['⚠ Eksik bilgisi olan', c.eksik]] : [])
   ].map(([a, n]) => `<tr><td>${a}</td><td>${n}</td></tr>`).join('');
   ac('perdeTamam');
 };

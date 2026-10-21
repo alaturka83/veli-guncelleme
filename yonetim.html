@@ -8,9 +8,9 @@
 <title>Veli Bilgileri · Yönetim</title>
 <script>
 // Sürüm kontrolü: GitHub'a yeni dosya yüklenince tarayıcı önbelleğini atlayıp yeni sürümü açar.
-(function(){var V='13';var u=new URL(location.href);fetch('surum.txt?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.text():''}).then(function(t){t=(t||'').trim();if(!t)return;if(t===V){if(u.searchParams.has('yv')){u.searchParams.delete('yv');u.searchParams.delete('r');history.replaceState(null,'',u.pathname+u.search+u.hash)}return}var once=Number(u.searchParams.get('r')||0);if(u.searchParams.get('yv')===t&&Date.now()-once<60000)return;u.searchParams.set('yv',t);u.searchParams.set('r',Date.now());location.replace(u.href)}).catch(function(){})})();
+(function(){var V='14';var u=new URL(location.href);fetch('surum.txt?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.text():''}).then(function(t){t=(t||'').trim();if(!t)return;if(t===V){if(u.searchParams.has('yv')){u.searchParams.delete('yv');u.searchParams.delete('r');history.replaceState(null,'',u.pathname+u.search+u.hash)}return}var once=Number(u.searchParams.get('r')||0);if(u.searchParams.get('yv')===t&&Date.now()-once<60000)return;u.searchParams.set('yv',t);u.searchParams.set('r',Date.now());location.replace(u.href)}).catch(function(){})})();
 </script>
-<link rel="stylesheet" href="ortak.css?v=13">
+<link rel="stylesheet" href="ortak.css?v=14">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <style>
@@ -39,7 +39,7 @@
   .istat div{background:#fff;border-radius:var(--r);box-shadow:var(--golge);padding:14px 16px}
   .istat b{display:block;font-size:26px;line-height:1.1;font-variant-numeric:tabular-nums}
   .istat span{font-size:13px;color:var(--soluk);font-weight:600}
-  .istat .yesil b{color:var(--yesil)} .istat .mavi b{color:var(--mavi)} .istat .kirmizi b{color:var(--kirmizi)} .istat .mor b{color:var(--mor)} .istat .sari b{color:var(--sari)}
+  .istat .yesil b{color:var(--yesil)} .istat .mavi b{color:var(--mavi)} .istat .kirmizi b{color:var(--kirmizi)} .istat .mor b{color:var(--mor)} .istat .sari b{color:var(--sari)} .istat .turuncu b{color:#c2410c}
 
   /* Şube ızgarası */
   .sinif-satir{display:grid;grid-template-columns:44px 1fr;gap:10px;align-items:start;margin-bottom:10px}
@@ -303,6 +303,7 @@
             <option value="ayrildi">Ayrıldı</option>
             <option value="yeni">Yeni kayıt</option>
             <option value="eksik">Eksik bilgi</option>
+            <option value="devamsiz">Sürekli devamsız</option>
           </select>
           <button class="btn kucuk" id="oEkle">＋ Öğrenci ekle</button>
           <button class="btn kucuk" id="oIndir">⬇ Bu listeyi indir</button>
@@ -421,6 +422,8 @@
     <label class="alan" id="aAd"><span>Öğrenci adı soyadı</span><input id="fAd"><small></small></label>
     <label class="alan" id="aVeli"><span>Veli adı soyadı</span><input id="fVeli"><small></small></label>
     <label class="alan" id="aTel"><span>Telefon</span><input id="fTel" type="tel" inputmode="tel" placeholder="5XX XXX XX XX"><small></small></label>
+    <label class="devamsiz-kutu"><input type="checkbox" id="fDevamsiz"><span><b>Sürekli devamsız</b><small>Okula düzenli gelmeyen ya da ailesine ulaşılamayan öğrenci</small></span></label>
+    <label class="alan gizli" id="aDevNot"><span>Devamsızlık açıklaması <small style="display:inline;font-weight:500;color:var(--cok-soluk)">(isteğe bağlı)</small></span><input id="fDevNot" maxlength="120" placeholder="ör. yurt dışında, adres değişti, ulaşılamıyor"><small></small></label>
     <div class="dugmeler">
       <button type="button" class="btn" data-kapat>Vazgeç</button>
       <button type="submit" class="btn ana">Kaydet</button>
@@ -452,7 +455,7 @@
 <script type="module">
 import { baglan, ozelAdlariTanit, ozelAnahtarBul, ozelMi, OZEL_ADLAR, firebaseConfig, OKUL_ADI, SUBE_ALANI, TUM_SUBELER, subeAnahtari, subeAdi, subeExcel, subeSira, subeEposta,
   baslikYap, telTemizle, telGecerli, telGoster, noTemizle, esc, aramaMetni, DURUM, durumHesapla, degisenAlanlar,
-  sifreUret, hataMesaji, tost, tarihGoster } from './ortak.js?v=13';
+  sifreUret, hataMesaji, tost, tarihGoster } from './ortak.js?v=14';
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged, initializeAuth, inMemoryPersistence,
   createUserWithEmailAndPassword, updatePassword } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
@@ -574,10 +577,11 @@ function tumSkler() {
   return [...s].filter(Boolean).sort(subeSira);
 }
 const eksikMi = o => o.durum !== 'ayrildi' && (!o.tel || !o.veli);
+const devamsizMi = o => o.durum !== 'ayrildi' && !!o.devamsiz;
 function subeOzet(sk) {
   const l = ogrenciler.filter(o => o.sk === sk);
-  const r = { toplam: l.length, mevcut: 0, bekliyor: 0, dogru: 0, duzeltildi: 0, ayrildi: 0, yeni: 0, eksik: 0 };
-  for (const o of l) { r[o.durum] = (r[o.durum] || 0) + 1; if (o.durum !== 'yeni') r.mevcut++; if (eksikMi(o)) r.eksik++; }
+  const r = { toplam: l.length, mevcut: 0, bekliyor: 0, dogru: 0, duzeltildi: 0, ayrildi: 0, yeni: 0, eksik: 0, devamsiz: 0 };
+  for (const o of l) { r[o.durum] = (r[o.durum] || 0) + 1; if (o.durum !== 'yeni') r.mevcut++; if (eksikMi(o)) r.eksik++; if (devamsizMi(o)) r.devamsiz++; }
   r.kontrol = r.mevcut - r.bekliyor;
   r.yuzde = r.mevcut ? Math.round(r.kontrol / r.mevcut * 100) : 0;
   r.guncel = r.toplam - r.ayrildi;
@@ -586,8 +590,8 @@ function subeOzet(sk) {
   return r;
 }
 function genelOzet() {
-  const r = { toplam: ogrenciler.length, bekliyor: 0, dogru: 0, duzeltildi: 0, ayrildi: 0, yeni: 0, eksik: 0 };
-  for (const o of ogrenciler) { r[o.durum] = (r[o.durum] || 0) + 1; if (eksikMi(o)) r.eksik++; }
+  const r = { toplam: ogrenciler.length, bekliyor: 0, dogru: 0, duzeltildi: 0, ayrildi: 0, yeni: 0, eksik: 0, devamsiz: 0 };
+  for (const o of ogrenciler) { r[o.durum] = (r[o.durum] || 0) + 1; if (eksikMi(o)) r.eksik++; if (devamsizMi(o)) r.devamsiz++; }
   const mevcut = r.toplam - r.yeni;
   r.yuzde = mevcut ? Math.round((mevcut - r.bekliyor) / mevcut * 100) : 0;
   const sk = tumSkler();
@@ -620,7 +624,8 @@ function cizPano(g) {
     <div class="mavi"><b>${g.duzeltildi}</b><span>Bilgisi düzeltilen</span></div>
     <div class="kirmizi"><b>${g.ayrildi}</b><span>Ayrılan</span></div>
     <div class="mor"><b>${g.yeni}</b><span>Yeni gelen</span></div>
-    <div class="sari"><b>${g.eksik}</b><span>Eksik bilgili</span></div>`;
+    <div class="sari"><b>${g.eksik}</b><span>Eksik bilgili</span></div>
+    <div class="turuncu"><b>${g.devamsiz}</b><span>Sürekli devamsız</span></div>`;
 
   const sk = tumSkler();
   $('karolar').innerHTML = ['0','1','2','3','4','5'].map(sinif => {
@@ -655,7 +660,7 @@ function cizPano(g) {
 }
 function islemAdi(i) {
   return ({ dogru: 'doğrulandı', duzeltildi: 'düzeltildi', ayrildi: 'ayrıldı', yeni: 'yeni kayıt eklendi', 'yeni-sil': 'yeni kayıt silindi',
-    'yeni-duzenle': 'yeni kayıt düzenlendi', bekliyor: 'onay geri alındı', 'yonetici-duzenle': 'yönetici düzenledi' })[i] || i;
+    'yeni-duzenle': 'yeni kayıt düzenlendi', bekliyor: 'onay geri alındı', devamsiz: 'sürekli devamsız işaretlendi', 'devamsiz-kaldir': 'devamsız işareti kaldırıldı', 'yonetici-duzenle': 'yönetici düzenledi' })[i] || i;
 }
 $('karolar').addEventListener('click', e => {
   const b = e.target.closest('[data-sk]'); if (!b) return;
@@ -678,7 +683,7 @@ function oFiltrele() {
   const q = aramaMetni($('oAra').value), sk = $('oSube').value, d = $('oDurum').value;
   return ogrenciler.filter(o => {
     if (sk && o.sk !== sk) return false;
-    if (d === 'eksik' ? !eksikMi(o) : (d && o.durum !== d)) return false;
+    if (d === 'eksik' ? !eksikMi(o) : d === 'devamsiz' ? !devamsizMi(o) : (d && o.durum !== d)) return false;
     if (q && !aramaMetni(`${o.ad} ${o.veli} ${o.no} ${o.tel} ${o.orj?.tel || ''}`).includes(q)) return false;
     return true;
   }).sort((a, b) => subeSira(a.sk, b.sk) || (a.ad || '').localeCompare(b.ad || '', 'tr'));
@@ -702,7 +707,7 @@ function satirOgr(o) {
     <td class="c-ad ad">${esc(o.ad)}${eskiYaz(o, 'ad')}</td>
     <td class="c-veli"><span class="mobil-ikon">👤</span>${o.veli ? esc(o.veli) : '<span class="eksik">Veli adı yok</span>'}${eskiYaz(o, 'veli')}</td>
     <td class="c-tel sayi"><span class="mobil-ikon">📞</span>${o.tel ? `<a class="tel-link" href="tel:0${esc(o.tel)}">${telGoster(o.tel)}</a>` : '<span class="eksik">Telefon yok</span>'}${eskiYaz(o, 'tel', telGoster)}</td>
-    <td class="c-durum"><span class="rozet ${d.renk}">${d.kisa}</span></td>
+    <td class="c-durum"><span class="rozet ${d.renk}">${d.kisa}</span>${devamsizMi(o) ? `<span class="rozet turuncu" style="margin-top:4px" title="${esc(o.devamsizNot || '')}">Devamsız</span>` : ''}</td>
     <td class="c-islem"><button class="btn kucuk">Düzenle</button></td>
   </tr>`;
 }
@@ -727,8 +732,8 @@ $('oIndir').onclick = async () => {
         baslik: `${subeAdi(sk)}${ozelMi(sk) ? '' : ' Şubesi'}${s.ogretmen ? ' · ' + s.ogretmen : ''}`,
         alt: `${OKUL_ADI}   ·   ${ozetSatir}${filtre ? '   ·   ' + filtre : ''}   ·   ${r.durum === 'tamam' ? 'Öğretmen listeyi tamamladı' : 'Öğretmen listeyi henüz tamamlamadı'}   ·   ${tarih}`,
         kolonlar: [{ h: 'Sıra', w: 6, orta: 1 }, { h: 'Okul No', w: 11, orta: 1 }, { h: 'Öğrenci Ad Soyad', w: 30 }, { h: 'Veli Ad Soyad', w: 28, eksik: 1 },
-          { h: 'Telefon', w: 20, fmt: XTEL, eksik: 1 }, { h: 'Durum', w: 13, durum: 1 }],
-        satirlar: l.map((o, i) => [i + 1, noSayi(o.no), o.ad, o.veli, telSayi(o.tel), XDURUM[o.durum]?.[2] || '']),
+          { h: 'Telefon', w: 20, fmt: XTEL, eksik: 1 }, { h: 'Durum', w: 13, durum: 1 }, { h: 'Devamsızlık', w: 24, turuncu: 1, sar: 1 }],
+        satirlar: l.map((o, i) => [i + 1, noSayi(o.no), o.ad, o.veli, telSayi(o.tel), XDURUM[o.durum]?.[2] || '', (devamsizMi(o) ? 'Sürekli devamsız' + (o.devamsizNot ? ' – ' + o.devamsizNot : '') : '')]),
         durumlar: l.map(o => o.durum),
         renk: sk[0] === '0' ? 'FFF59E0B' : sk[0] === '5' ? 'FF64748B' : ['', 'FF0EA5E9', 'FF10B981', 'FF8B5CF6', 'FFEF4444'][sk[0]],
       });
@@ -737,8 +742,8 @@ $('oIndir').onclick = async () => {
         baslik: `${OKUL_ADI} · Öğrenci Listesi`,
         alt: `${ozetSatir}${filtre ? '   ·   ' + filtre : ''}   ·   ${tarih}   ·   Sarı hücreler eksik bilgiyi gösterir.`,
         kolonlar: [{ h: 'Sınıf', w: 9, orta: 1, kalin: 1 }, { h: 'Okul Numarası', w: 11, orta: 1 }, { h: 'Öğrenci Ad Soyad', w: 30 }, { h: 'Veli Ad Soyad', w: 28, eksik: 1 },
-          { h: 'Telefon Numarası', w: 20, fmt: XTEL, eksik: 1 }, { h: 'Durum', w: 13, durum: 1 }],
-        satirlar: l.map(o => [subeExcel(o.sk), noSayi(o.no), o.ad, o.veli, telSayi(o.tel), XDURUM[o.durum]?.[2] || '']),
+          { h: 'Telefon Numarası', w: 20, fmt: XTEL, eksik: 1 }, { h: 'Durum', w: 13, durum: 1 }, { h: 'Devamsızlık', w: 24, turuncu: 1, sar: 1 }],
+        satirlar: l.map(o => [subeExcel(o.sk), noSayi(o.no), o.ad, o.veli, telSayi(o.tel), XDURUM[o.durum]?.[2] || '', (devamsizMi(o) ? 'Sürekli devamsız' + (o.devamsizNot ? ' – ' + o.devamsizNot : '') : '')]),
         durumlar: l.map(o => o.durum),
       });
     }
@@ -767,6 +772,7 @@ function ogrAc(o) {
   $('fSube').innerHTML = subeSecenekleri(o ? null : 'Şube seçin');
   $('fSube').value = o?.sk || $('oSube').value || '';
   $('fNo').value = o?.no || ''; $('fAd').value = o?.ad || ''; $('fVeli').value = o?.veli || ''; $('fTel').value = o?.tel || '';
+  $('fDevamsiz').checked = !!o?.devamsiz; $('fDevNot').value = o?.devamsizNot || ''; $('aDevNot').classList.toggle('gizli', !o?.devamsiz);
   $('ogrBaslik').textContent = o ? o.ad : 'Yeni öğrenci';
   $('ogrAlt').innerHTML = o ? `Durum: <b>${DURUM[o.durum]?.ad}</b>${o.orj ? ` · İlk kayıt: ${esc(subeAdi(o.orj.sk))} / ${esc(o.orj.no)} / ${esc(o.orj.veli || '—')} / ${telGoster(o.orj.tel) || '—'}` : ''}` : 'Yönetici tarafından eklenen kayıt “yeni” olarak işaretlenir.';
   $('ogrAyril').classList.toggle('gizli', !o);
@@ -793,6 +799,7 @@ function kayitEkle(k) {
 $('ogrForm').addEventListener('submit', async e => {
   e.preventDefault();
   const v = { sk: $('fSube').value, no: noTemizle($('fNo').value), ad: baslikYap($('fAd').value), veli: baslikYap($('fVeli').value), tel: telTemizle($('fTel').value) };
+  const dev = { devamsiz: $('fDevamsiz').checked, devamsizNot: $('fDevamsiz').checked ? $('fDevNot').value.trim() : '' };
   let h = false;
   ['aSube','aNo','aAd','aVeli','aTel'].forEach(a => alanHata(a, ''));
   if (!v.sk) { alanHata('aSube', 'Şube seçin'); h = true; }
@@ -802,10 +809,11 @@ $('ogrForm').addEventListener('submit', async e => {
   if (h) return;
   kapat('perdeOgr');
   if (aktif) {
-    const durum = aktif.durum === 'ayrildi' ? 'ayrildi' : durumHesapla(aktif, v);
-    if (await ogrGuncelle(aktif, { ...v, durum }, 'yonetici-duzenle')) tost('Kaydedildi', 'tamam');
+    const alanDegisti = ['sk', 'no', 'ad', 'veli', 'tel'].some(k => (v[k] || '') !== (aktif[k] || ''));
+    const durum = aktif.durum === 'ayrildi' ? 'ayrildi' : (!alanDegisti ? aktif.durum : durumHesapla(aktif, v));
+    if (await ogrGuncelle(aktif, { ...v, ...dev, durum }, !!aktif.devamsiz !== dev.devamsiz && !alanDegisti ? (dev.devamsiz ? 'devamsiz' : 'devamsiz-kaldir') : 'yonetici-duzenle')) tost('Kaydedildi', 'tamam');
   } else {
-    const yeni = { ...v, durum: 'yeni', orj: null };
+    const yeni = { ...v, ...dev, durum: 'yeni', orj: null };
     try {
       const ref = await addDoc(collection(db, 'ogrenciler'), { ...yeni, guncel: serverTimestamp() });
       ogrenciler.push({ id: ref.id, ...yeni });
@@ -815,6 +823,7 @@ $('ogrForm').addEventListener('submit', async e => {
   }
 });
 $('fTel').addEventListener('blur', () => { const t = telTemizle($('fTel').value); if (t) $('fTel').value = t; });
+$('fDevamsiz').addEventListener('change', () => $('aDevNot').classList.toggle('gizli', !$('fDevamsiz').checked));
 $('ogrAyril').onclick = async () => {
   const o = aktif; kapat('perdeOgr');
   if (o.durum === 'ayrildi') await ogrGuncelle(o, { durum: o.oncekiDurum && o.oncekiDurum !== 'ayrildi' ? o.oncekiDurum : 'bekliyor', oncekiDurum: null }, 'bekliyor');
@@ -834,9 +843,9 @@ $('ogrSil').onclick = async () => {
 let dTur = 'duzeltildi';
 function cizDegisim() {
   const g = genelOzet();
-  const t = [['duzeltildi','Düzeltilen',g.duzeltildi],['ayrildi','Ayrılan',g.ayrildi],['yeni','Yeni gelen',g.yeni],['eksik','Eksik bilgi',g.eksik]];
+  const t = [['duzeltildi','Düzeltilen',g.duzeltildi],['ayrildi','Ayrılan',g.ayrildi],['yeni','Yeni gelen',g.yeni],['eksik','Eksik bilgi',g.eksik],['devamsiz','Sürekli devamsız',g.devamsiz]];
   $('dCipler').innerHTML = t.map(([k, a, n]) => `<button class="btn kucuk ${dTur === k ? 'ana' : ''}" data-d="${k}">${a} · ${n}</button>`).join('');
-  const l = ogrenciler.filter(o => dTur === 'eksik' ? eksikMi(o) : o.durum === dTur).sort((a, b) => subeSira(a.sk, b.sk) || (a.ad || '').localeCompare(b.ad || '', 'tr'));
+  const l = ogrenciler.filter(o => dTur === 'eksik' ? eksikMi(o) : dTur === 'devamsiz' ? devamsizMi(o) : o.durum === dTur).sort((a, b) => subeSira(a.sk, b.sk) || (a.ad || '').localeCompare(b.ad || '', 'tr'));
   if (dTur === 'duzeltildi') {
     $('dBas').innerHTML = '<tr><th>Şube</th><th>No</th><th>Öğrenci</th><th>Veli (eski → yeni)</th><th>Telefon (eski → yeni)</th><th>Değişen</th><th></th></tr>';
     const ok = (o, a, f = x => x) => {
@@ -851,11 +860,12 @@ function cizDegisim() {
       <td class="c-durum">${degisenAlanlar(o).map(a => `<span class="rozet mavi">${ad[a]}</span>`).join(' ')}</td>
       <td class="c-islem"><button class="btn kucuk">Düzenle</button></td></tr>`).join('') || bosSatir(7);
   } else {
-    $('dBas').innerHTML = '<tr><th>Şube</th><th>No</th><th>Öğrenci</th><th>Veli</th><th>Telefon</th><th></th></tr>';
+    $('dBas').innerHTML = `<tr><th>Şube</th><th>No</th><th>Öğrenci</th><th>Veli</th><th>Telefon</th>${dTur === 'devamsiz' ? '<th>Açıklama</th>' : ''}<th></th></tr>`;
     $('dGovde').innerHTML = l.map(o => `<tr class="kartsatir" data-duzen="${o.id}">
       <td class="c-sube"><span class="sube-cip">${subeAdi(o.sk)}</span></td><td class="c-no sayi"><span class="mobil-etiket">No </span>${esc(o.no)}</td><td class="c-ad ad">${esc(o.ad)}</td>
       <td class="c-veli"><span class="mobil-ikon">👤</span>${o.veli ? esc(o.veli) : '<span class="eksik">Veli adı yok</span>'}</td><td class="c-tel sayi"><span class="mobil-ikon">📞</span>${o.tel ? `<a class="tel-link" href="tel:0${esc(o.tel)}">${telGoster(o.tel)}</a>` : '<span class="eksik">Telefon yok</span>'}</td>
-      <td class="c-islem"><button class="btn kucuk">Düzenle</button></td></tr>`).join('') || bosSatir(6);
+      ${dTur === 'devamsiz' ? `<td class="c-durum"><span class="rozet turuncu">Devamsız</span>${o.devamsizNot ? `<div style="font-size:12.5px;color:#9a3412;margin-top:3px;text-align:left">${esc(o.devamsizNot)}</div>` : ''}</td>` : ''}
+      <td class="c-islem"><button class="btn kucuk">Düzenle</button></td></tr>`).join('') || bosSatir(7);
   }
 }
 const bosSatir = n => `<tr><td colspan="${n}" class="soluk" style="text-align:center;padding:30px">Kayıt yok.</td></tr>`;
@@ -1296,7 +1306,8 @@ function xSayfa(wb, ad, { baslik, alt, kolonlar, satirlar, durumlar, toplam, yat
       if (bos && k.eksik) c.fill = dolgu('FFFFF1D6');
       else if (ri % 2) c.fill = dolgu(XR.zebra);
       c.border = XKENAR;
-      c.alignment = { vertical: 'middle', horizontal: k.orta ? 'center' : 'left', indent: k.orta ? 0 : 1 };
+      c.alignment = { vertical: 'middle', horizontal: k.orta ? 'center' : 'left', indent: k.orta ? 0 : 1, wrapText: !!k.sar };
+      if (k.turuncu && !bos) { c.font = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FFC2410C' } }; c.fill = dolgu('FFFFEDD5'); }
     });
     const d = durumlar?.[ri];
     const di = kolonlar.findIndex(k => k.durum);
@@ -1338,7 +1349,7 @@ async function excelIndir(onEk = 'Veli_Iletisim') {
     // 1) ÖZET
     const ozetSatir = skler.map(sk => {
       const r = subeOzet(sk), s = subeler[sk] || {};
-      return { r, v: [{ text: subeAdi(sk), hyperlink: `#'${sayfaAdi(sk)}'!A1` }, s.ogretmen || '', r.guncel, r.kontrol, r.bekliyor, r.duzeltildi, r.ayrildi, r.yeni, r.eksik,
+      return { r, v: [{ text: subeAdi(sk), hyperlink: `#'${sayfaAdi(sk)}'!A1` }, s.ogretmen || '', r.guncel, r.kontrol, r.bekliyor, r.duzeltildi, r.ayrildi, r.yeni, r.eksik, r.devamsiz,
         r.durum === 'tamam' ? 'Tamamlandı' : r.durum === 'devam' ? `Devam · %${r.yuzde}` : 'Başlamadı', s.tamamlandi ? tarihGoster(s.tamamTarih) : ''] };
     });
     const top = k => ozetSatir.reduce((a, x) => a + (x.r[k] || 0), 0);
@@ -1347,9 +1358,9 @@ async function excelIndir(onEk = 'Veli_Iletisim') {
       alt: `Rapor tarihi: ${tarih}   ·   Tamamlayan şube: ${g.tamamSube} / ${g.subeSayi}   ·   Kontrol oranı: %${g.yuzde}   ·   Şube adına tıklayarak o şubenin sayfasına gidebilirsiniz.`,
       kolonlar: [{ h: 'Şube', w: 9, orta: 1, kalin: 1 }, { h: 'Öğretmen', w: 26 }, { h: 'Güncel Mevcut', w: 10, orta: 1 }, { h: 'Kontrol Edilen', w: 10, orta: 1 },
         { h: 'Bekleyen', w: 10, orta: 1 }, { h: 'Düzeltilen', w: 11, orta: 1 }, { h: 'Ayrılan', w: 9, orta: 1 }, { h: 'Yeni Gelen', w: 9, orta: 1 },
-        { h: 'Eksik Bilgi', w: 9, orta: 1 }, { h: 'Durum', w: 15, durum: 1 }, { h: 'Tamamlanma', w: 15, orta: 1 }],
+        { h: 'Eksik Bilgi', w: 9, orta: 1 }, { h: 'Sürekli Devamsız', w: 10, orta: 1 }, { h: 'Durum', w: 15, durum: 1 }, { h: 'Tamamlanma', w: 15, orta: 1 }],
       satirlar: ozetSatir.map(x => x.v), durumlar: ozetSatir.map(x => x.r.durum),
-      toplam: ['TOPLAM', `${skler.length} şube`, top('guncel'), top('kontrol'), top('bekliyor'), top('duzeltildi'), top('ayrildi'), top('yeni'), top('eksik'), `${g.tamamSube} tamamlandı`, ''],
+      toplam: ['TOPLAM', `${skler.length} şube`, top('guncel'), top('kontrol'), top('bekliyor'), top('duzeltildi'), top('ayrildi'), top('yeni'), top('eksik'), top('devamsiz'), `${g.tamamSube} tamamlandı`, ''],
       yatay: true,
     });
     wsO.getColumn(1).eachCell((c, i) => { if (i > 3 && c.value?.hyperlink) c.font = { name: 'Calibri', bold: true, size: 11, color: { argb: 'FF1A56DB' }, underline: true }; });
@@ -1359,8 +1370,8 @@ async function excelIndir(onEk = 'Veli_Iletisim') {
       baslik: `${OKUL_ADI} · Tüm Şubeler Veli İletişim Listesi`,
       alt: `${aktifler.length} öğrenci   ·   ${tarih}   ·   Ayrılan öğrenciler bu listede yer almaz. Sarı hücreler eksik bilgiyi gösterir.`,
       kolonlar: [{ h: 'Sınıf', w: 9, orta: 1, kalin: 1 }, { h: 'Okul Numarası', w: 11, orta: 1 }, { h: 'Öğrenci Ad Soyad', w: 30 }, { h: 'Veli Ad Soyad', w: 28, eksik: 1 },
-        { h: 'Telefon Numarası', w: 20, fmt: XTEL, eksik: 1 }, { h: 'Durum', w: 13, durum: 1 }],
-      satirlar: aktifler.map(o => [subeExcel(o.sk), noSayi(o.no), o.ad, o.veli, telSayi(o.tel), XDURUM[o.durum]?.[2] || '']),
+        { h: 'Telefon Numarası', w: 20, fmt: XTEL, eksik: 1 }, { h: 'Durum', w: 13, durum: 1 }, { h: 'Devamsızlık', w: 24, turuncu: 1, sar: 1 }],
+      satirlar: aktifler.map(o => [subeExcel(o.sk), noSayi(o.no), o.ad, o.veli, telSayi(o.tel), XDURUM[o.durum]?.[2] || '', (devamsizMi(o) ? 'Sürekli devamsız' + (o.devamsizNot ? ' – ' + o.devamsizNot : '') : '')]),
       durumlar: aktifler.map(o => o.durum),
     });
 
@@ -1384,6 +1395,10 @@ async function excelIndir(onEk = 'Veli_Iletisim') {
     xSayfa(wb, 'Eksik Bilgi', { baslik: 'Veli Adı veya Telefonu Eksik Öğrenciler', alt: `${eks.length} öğrenci`, renk: XR.sari,
       kolonlar: [...bes, { h: 'Eksik', w: 18 }], satirlar: eks.map(o => [...satir5(o), [!o.veli && 'Veli adı', !o.tel && 'Telefon'].filter(Boolean).join(', ')]) });
 
+    const dvm = sirali(ogrenciler.filter(devamsizMi));
+    xSayfa(wb, 'Sürekli Devamsız', { baslik: 'Sürekli Devamsız Öğrenciler', alt: `${dvm.length} öğrenci`, renk: 'FFEA580C',
+      kolonlar: [...bes, { h: 'Açıklama', w: 30, sar: 1 }], satirlar: dvm.map(o => [...satir5(o), o.devamsizNot || '']) });
+
     // 4) HER ŞUBE AYRI SAYFA
     for (const sk of skler) {
       const s = subeler[sk] || {}, r = subeOzet(sk);
@@ -1392,8 +1407,8 @@ async function excelIndir(onEk = 'Veli_Iletisim') {
         baslik: `${subeAdi(sk)} Şubesi${s.ogretmen ? ' · ' + s.ogretmen : ''}`,
         alt: `${OKUL_ADI}   ·   Mevcut: ${l.length}   ·   Düzeltilen: ${r.duzeltildi}   ·   Yeni: ${r.yeni}   ·   Ayrılan: ${r.ayrildi}   ·   ${r.durum === 'tamam' ? 'Öğretmen listeyi tamamladı' : 'Öğretmen listeyi henüz tamamlamadı'}`,
         kolonlar: [{ h: 'Sıra', w: 6, orta: 1 }, { h: 'Okul No', w: 11, orta: 1 }, { h: 'Öğrenci Ad Soyad', w: 30 }, { h: 'Veli Ad Soyad', w: 28, eksik: 1 },
-          { h: 'Telefon', w: 20, fmt: XTEL, eksik: 1 }, { h: 'Durum', w: 13, durum: 1 }],
-        satirlar: l.map((o, i) => [i + 1, noSayi(o.no), o.ad, o.veli, telSayi(o.tel), XDURUM[o.durum]?.[2] || '']),
+          { h: 'Telefon', w: 20, fmt: XTEL, eksik: 1 }, { h: 'Durum', w: 13, durum: 1 }, { h: 'Devamsızlık', w: 24, turuncu: 1, sar: 1 }],
+        satirlar: l.map((o, i) => [i + 1, noSayi(o.no), o.ad, o.veli, telSayi(o.tel), XDURUM[o.durum]?.[2] || '', (devamsizMi(o) ? 'Sürekli devamsız' + (o.devamsizNot ? ' – ' + o.devamsizNot : '') : '')]),
         durumlar: l.map(o => o.durum),
         renk: sk[0] === '0' ? 'FFF59E0B' : ['', 'FF0EA5E9', 'FF10B981', 'FF8B5CF6', 'FFEF4444'][sk[0]],
       });
