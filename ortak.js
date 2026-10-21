@@ -1,13 +1,16 @@
 // Ortak yardımcılar — öğretmen ve yönetici ekranları birlikte kullanır.
-import { firebaseConfig, OKUL_ADI, SUBE_ALANI } from './config.js?v=4';
+import { firebaseConfig, OKUL_ADI, SUBE_ALANI } from './config.js?v=5';
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getAuth } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { getFirestore } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 export { OKUL_ADI, SUBE_ALANI, firebaseConfig };
-export const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
-export const db = getFirestore(app);
+/** Her rol/şube kendi oturum alanını kullanır; böylece aynı tarayıcıda yönetici paneli
+ *  ve farklı şubeler birbirinin oturumunu kapatmaz. */
+export function baglan(ad) {
+  const app = ad ? initializeApp(firebaseConfig, ad) : initializeApp(firebaseConfig);
+  return { app, auth: getAuth(app), db: getFirestore(app) };
+}
 
 // ---------- Şubeler ----------
 const HARFLER_1 = ['A','B','C','D','E','F','G','H','İ','J'];

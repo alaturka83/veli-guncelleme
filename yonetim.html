@@ -8,9 +8,9 @@
 <title>Veli Bilgileri · Yönetim</title>
 <script>
 // Sürüm kontrolü: GitHub'a yeni dosya yüklenince tarayıcı önbelleğini atlayıp yeni sürümü açar.
-(function(){var V='4';fetch('surum.txt?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.text():''}).then(function(t){t=(t||'').trim();if(!t||t===V)return;var k='surum-'+t;try{if(sessionStorage.getItem(k))return;sessionStorage.setItem(k,'1')}catch(e){}var u=new URL(location.href);u.searchParams.set('v',t);location.replace(u.href)}).catch(function(){})})();
+(function(){var V='5';fetch('surum.txt?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.text():''}).then(function(t){t=(t||'').trim();if(!t||t===V)return;var k='surum-'+t;try{if(sessionStorage.getItem(k))return;sessionStorage.setItem(k,'1')}catch(e){}var u=new URL(location.href);u.searchParams.set('v',t);location.replace(u.href)}).catch(function(){})})();
 </script>
-<link rel="stylesheet" href="ortak.css?v=4">
+<link rel="stylesheet" href="ortak.css?v=5">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <style>
@@ -330,15 +330,16 @@
 <div id="yazdir"></div>
 
 <script type="module">
-import { auth, db, firebaseConfig, OKUL_ADI, SUBE_ALANI, TUM_SUBELER, subeAnahtari, subeAdi, subeExcel, subeSira, subeEposta,
+import { baglan, firebaseConfig, OKUL_ADI, SUBE_ALANI, TUM_SUBELER, subeAnahtari, subeAdi, subeExcel, subeSira, subeEposta,
   baslikYap, telTemizle, telGecerli, telGoster, noTemizle, esc, aramaMetni, DURUM, durumHesapla, degisenAlanlar,
-  sifreUret, hataMesaji, tost, tarihGoster } from './ortak.js?v=4';
+  sifreUret, hataMesaji, tost, tarihGoster } from './ortak.js?v=5';
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged, initializeAuth, inMemoryPersistence,
   createUserWithEmailAndPassword, updatePassword } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { collection, doc, getDoc, getDocs, setDoc, updateDoc, addDoc, deleteDoc, writeBatch, query, orderBy, limit,
   serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
+const { auth, db } = baglan('yonetim');
 const $ = id => document.getElementById(id);
 const goster = id => ['ekranYukle','ekranGiris','ekranAna'].forEach(e => $(e).classList.toggle('gizli', e !== id));
 $('okulAdiGiris').textContent = OKUL_ADI;
@@ -368,7 +369,11 @@ $('cikisBtn').onclick = () => signOut(auth);
 
 onAuthStateChanged(auth, async user => {
   if (!user) { goster('ekranGiris'); return; }
-  if (user.email?.endsWith('@' + SUBE_ALANI)) { await signOut(auth); return; }   // şube hesabıyla yönetime girilmez
+  if (user.email?.endsWith('@' + SUBE_ALANI)) {   // şube hesabıyla yönetime girilmez
+    await signOut(auth);
+    $('girisHata').textContent = 'Şube şifresiyle yönetici paneline girilemez.'; $('girisHata').classList.remove('gizli');
+    return;
+  }
   goster('ekranYukle');
   try {
     await yukle();
