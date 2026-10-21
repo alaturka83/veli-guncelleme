@@ -8,9 +8,9 @@
 <title>Veli Bilgi Güncelleme</title>
 <script>
 // Sürüm kontrolü: GitHub'a yeni dosya yüklenince tarayıcı önbelleğini atlayıp yeni sürümü açar.
-(function(){var V='19';var u=new URL(location.href);fetch('surum.txt?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.text():''}).then(function(t){t=(t||'').trim();if(!t)return;if(t===V){if(u.searchParams.has('yv')){u.searchParams.delete('yv');u.searchParams.delete('r');history.replaceState(null,'',u.pathname+u.search+u.hash)}return}var once=Number(u.searchParams.get('r')||0);if(u.searchParams.get('yv')===t&&Date.now()-once<60000)return;u.searchParams.set('yv',t);u.searchParams.set('r',Date.now());location.replace(u.href)}).catch(function(){})})();
+(function(){var V='20';var u=new URL(location.href);fetch('surum.txt?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.text():''}).then(function(t){t=(t||'').trim();if(!t)return;if(t===V){if(u.searchParams.has('yv')){u.searchParams.delete('yv');u.searchParams.delete('r');history.replaceState(null,'',u.pathname+u.search+u.hash)}return}var once=Number(u.searchParams.get('r')||0);if(u.searchParams.get('yv')===t&&Date.now()-once<60000)return;u.searchParams.set('yv',t);u.searchParams.set('r',Date.now());location.replace(u.href)}).catch(function(){})})();
 </script>
-<link rel="stylesheet" href="ortak.css?v=19">
+<link rel="stylesheet" href="ortak.css?v=20">
 <style>
   /* ---------- Üst bant ---------- */
   .ust{position:sticky;top:0;z-index:20;background:var(--ana);color:#fff;padding:12px 16px 14px;padding-top:calc(12px + env(safe-area-inset-top))}
@@ -22,6 +22,10 @@
   .ust-baslik span{font-size:12.5px;opacity:.85}
   .cikis{background:rgba(255,255,255,.14);border:0;color:#fff;border-radius:10px;width:40px;height:40px;display:grid;place-items:center;flex:none}
   .cikis svg{width:20px;height:20px}
+  .excel-btn{display:inline-flex;align-items:center;gap:6px;flex:none;height:40px;padding:0 12px;border-radius:10px;border:0;background:#1f9d55;color:#fff;font-weight:800;font-size:14px;box-shadow:0 2px 6px rgba(0,0,0,.18)}
+  .excel-btn svg{width:19px;height:19px}
+  .excel-btn:active{transform:scale(.97)}
+  .excel-btn:disabled{opacity:.6}
   .ilerleme{margin-top:12px}
   .ilerleme-ust{display:flex;justify-content:space-between;font-size:13px;font-weight:600;margin-bottom:6px;opacity:.95}
   .cubuk{height:8px;background:rgba(255,255,255,.22);border-radius:8px;overflow:hidden}
@@ -152,7 +156,7 @@
       <div class="ust-satir">
         <div class="sube-etiket" id="ustSube"></div>
         <div class="ust-baslik"><b id="ustOgretmen"></b><span id="ustOkul"></span></div>
-        <button class="cikis" id="excelBtn" title="Sınıf listesini Excel olarak indir" aria-label="Excel indir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
+        <button class="excel-btn" id="excelBtn" title="Sınıf listesini Excel olarak indir" aria-label="Sınıf listesini Excel olarak indir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2.5"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="9" x2="9" y2="21"/></svg><span>Excel</span></button>
         <button class="cikis" id="cikisBtn" title="Çıkış yap" aria-label="Çıkış yap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>
       </div>
       <div class="ilerleme">
@@ -250,8 +254,8 @@
 <script type="module">
 import { baglan, OZEL_ADLAR, ozelMi, subeExcel, OKUL_ADI, SUBE_ALANI, TUM_SUBELER, subeAnahtari, subeAdi, subeEposta,
   baslikYap, telTemizle, telGecerli, telGoster, noTemizle, esc, aramaMetni, DURUM, durumHesapla,
-  hataMesaji, tost } from './ortak.js?v=19';
-import { yeniKitap, subeSayfalari, excelKaydet, bugun } from './excel.js?v=19';
+  hataMesaji, tost } from './ortak.js?v=20';
+import { yeniKitap, subeSayfalari, excelKaydet, bugun } from './excel.js?v=20';
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { collection, doc, getDoc, getDocs, query, where, updateDoc, addDoc, deleteDoc, serverTimestamp, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
@@ -329,7 +333,7 @@ $('cikisBtn').onclick = async () => { await signOut(auth); };
 // Sınıf listesini yöneticideki “Bu listeyi indir” ile birebir aynı biçimde indirir
 $('excelBtn').onclick = async () => {
   const btn = $('excelBtn'); if (btn.disabled) return;
-  btn.disabled = true; btn.style.opacity = '.5'; tost('Excel hazırlanıyor…');
+  btn.disabled = true; tost('Excel hazırlanıyor…');
   try {
     const wb = await yeniKitap();
     const liste = ogrenciler.filter(o => o.durum !== 'ayrildi').sort((a, b) => (a.ad || '').localeCompare(b.ad || '', 'tr'));
@@ -337,7 +341,7 @@ $('excelBtn').onclick = async () => {
     await excelKaydet(wb, `Sinif_Listesi_${subeExcel(sk).replace(/\s+/g, '_')}_${bugun()}.xlsx`);
     tost('Excel indirildi', 'tamam');
   } catch (err) { tost(hataMesaji(err), 'hata'); }
-  finally { btn.disabled = false; btn.style.opacity = ''; }
+  finally { btn.disabled = false; }
 };
 
 if (!auth) girisHazirla();
