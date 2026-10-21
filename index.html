@@ -8,9 +8,9 @@
 <title>Veli Bilgi Güncelleme</title>
 <script>
 // Sürüm kontrolü: GitHub'a yeni dosya yüklenince tarayıcı önbelleğini atlayıp yeni sürümü açar.
-(function(){var V='12';var u=new URL(location.href);fetch('surum.txt?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.text():''}).then(function(t){t=(t||'').trim();if(!t)return;if(t===V){if(u.searchParams.has('yv')){u.searchParams.delete('yv');u.searchParams.delete('r');history.replaceState(null,'',u.pathname+u.search+u.hash)}return}var once=Number(u.searchParams.get('r')||0);if(u.searchParams.get('yv')===t&&Date.now()-once<60000)return;u.searchParams.set('yv',t);u.searchParams.set('r',Date.now());location.replace(u.href)}).catch(function(){})})();
+(function(){var V='13';var u=new URL(location.href);fetch('surum.txt?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.text():''}).then(function(t){t=(t||'').trim();if(!t)return;if(t===V){if(u.searchParams.has('yv')){u.searchParams.delete('yv');u.searchParams.delete('r');history.replaceState(null,'',u.pathname+u.search+u.hash)}return}var once=Number(u.searchParams.get('r')||0);if(u.searchParams.get('yv')===t&&Date.now()-once<60000)return;u.searchParams.set('yv',t);u.searchParams.set('r',Date.now());location.replace(u.href)}).catch(function(){})})();
 </script>
-<link rel="stylesheet" href="ortak.css?v=12">
+<link rel="stylesheet" href="ortak.css?v=13">
 <style>
   /* ---------- Üst bant ---------- */
   .ust{position:sticky;top:0;z-index:20;background:var(--ana);color:#fff;padding:12px 16px 14px;padding-top:calc(12px + env(safe-area-inset-top))}
@@ -192,7 +192,7 @@
     <div class="tutamak"></div>
     <h3 id="duzenBaslik">Bilgileri düzelt</h3>
     <p class="alt-baslik" id="duzenAlt"></p>
-    <label class="alan" id="alanNo"><span>Okul numarası</span><input id="fNo" inputmode="numeric" autocomplete="off"><small></small></label>
+    <label class="alan" id="alanNo"><span>Okul numarası <small style="display:inline;font-weight:500;color:var(--cok-soluk)">(biliniyorsa)</small></span><input id="fNo" inputmode="numeric" autocomplete="off"><small></small></label>
     <label class="alan" id="alanAd"><span>Öğrenci adı soyadı</span><input id="fAd" autocomplete="off" autocapitalize="words"><small></small></label>
     <label class="alan" id="alanVeli"><span>Veli adı soyadı</span><input id="fVeli" autocomplete="off" autocapitalize="words"><small></small></label>
     <label class="alan" id="alanTel"><span>Veli telefonu</span><input id="fTel" type="tel" inputmode="tel" placeholder="5XX XXX XX XX" autocomplete="off"><small>Başında 0 olmadan 10 hane (5 ile başlar)</small></label>
@@ -247,7 +247,7 @@
 <script type="module">
 import { baglan, OZEL_ADLAR, ozelMi, OKUL_ADI, SUBE_ALANI, TUM_SUBELER, subeAnahtari, subeAdi, subeEposta,
   baslikYap, telTemizle, telGecerli, telGoster, noTemizle, esc, aramaMetni, DURUM, durumHesapla,
-  hataMesaji, tost } from './ortak.js?v=12';
+  hataMesaji, tost } from './ortak.js?v=13';
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { collection, doc, getDoc, getDocs, query, where, updateDoc, addDoc, deleteDoc, serverTimestamp, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
@@ -617,8 +617,7 @@ $('duzenForm').addEventListener('submit', async e => {
   };
   let hata = false;
   ['alanNo','alanAd','alanVeli','alanTel'].forEach(a => alanHata(a, ''));
-  if (!v.no) { alanHata('alanNo', 'Okul numarası gerekli'); hata = true; }
-  else if (ogrenciler.some(x => x.id !== aktif?.id && x.no === v.no && x.durum !== 'ayrildi')) { alanHata('alanNo', 'Bu numara sınıfta başka bir öğrencide kayıtlı'); hata = true; }
+  if (v.no && ogrenciler.some(x => x.id !== aktif?.id && x.no === v.no && x.durum !== 'ayrildi')) { alanHata('alanNo', 'Bu numara sınıfta başka bir öğrencide kayıtlı'); hata = true; }
   if (v.ad.length < 3) { alanHata('alanAd', 'Ad soyad gerekli'); hata = true; }
   if (v.tel && !telGecerli(v.tel)) { alanHata('alanTel', 'Geçersiz numara: 5 ile başlayan 10 hane olmalı'); hata = true; }
   if (hata) return;

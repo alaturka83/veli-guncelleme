@@ -8,9 +8,9 @@
 <title>Veli Bilgileri · Yönetim</title>
 <script>
 // Sürüm kontrolü: GitHub'a yeni dosya yüklenince tarayıcı önbelleğini atlayıp yeni sürümü açar.
-(function(){var V='12';var u=new URL(location.href);fetch('surum.txt?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.text():''}).then(function(t){t=(t||'').trim();if(!t)return;if(t===V){if(u.searchParams.has('yv')){u.searchParams.delete('yv');u.searchParams.delete('r');history.replaceState(null,'',u.pathname+u.search+u.hash)}return}var once=Number(u.searchParams.get('r')||0);if(u.searchParams.get('yv')===t&&Date.now()-once<60000)return;u.searchParams.set('yv',t);u.searchParams.set('r',Date.now());location.replace(u.href)}).catch(function(){})})();
+(function(){var V='13';var u=new URL(location.href);fetch('surum.txt?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.text():''}).then(function(t){t=(t||'').trim();if(!t)return;if(t===V){if(u.searchParams.has('yv')){u.searchParams.delete('yv');u.searchParams.delete('r');history.replaceState(null,'',u.pathname+u.search+u.hash)}return}var once=Number(u.searchParams.get('r')||0);if(u.searchParams.get('yv')===t&&Date.now()-once<60000)return;u.searchParams.set('yv',t);u.searchParams.set('r',Date.now());location.replace(u.href)}).catch(function(){})})();
 </script>
-<link rel="stylesheet" href="ortak.css?v=12">
+<link rel="stylesheet" href="ortak.css?v=13">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <style>
@@ -417,7 +417,7 @@
     <h3 id="ogrBaslik">Öğrenci</h3>
     <p class="alt-baslik" id="ogrAlt"></p>
     <label class="alan" id="aSube"><span>Şube</span><select id="fSube"></select><small></small></label>
-    <label class="alan" id="aNo"><span>Okul numarası</span><input id="fNo" inputmode="numeric"><small></small></label>
+    <label class="alan" id="aNo"><span>Okul numarası <small style="display:inline;font-weight:500;color:var(--cok-soluk)">(biliniyorsa)</small></span><input id="fNo" inputmode="numeric"><small></small></label>
     <label class="alan" id="aAd"><span>Öğrenci adı soyadı</span><input id="fAd"><small></small></label>
     <label class="alan" id="aVeli"><span>Veli adı soyadı</span><input id="fVeli"><small></small></label>
     <label class="alan" id="aTel"><span>Telefon</span><input id="fTel" type="tel" inputmode="tel" placeholder="5XX XXX XX XX"><small></small></label>
@@ -452,7 +452,7 @@
 <script type="module">
 import { baglan, ozelAdlariTanit, ozelAnahtarBul, ozelMi, OZEL_ADLAR, firebaseConfig, OKUL_ADI, SUBE_ALANI, TUM_SUBELER, subeAnahtari, subeAdi, subeExcel, subeSira, subeEposta,
   baslikYap, telTemizle, telGecerli, telGoster, noTemizle, esc, aramaMetni, DURUM, durumHesapla, degisenAlanlar,
-  sifreUret, hataMesaji, tost, tarihGoster } from './ortak.js?v=12';
+  sifreUret, hataMesaji, tost, tarihGoster } from './ortak.js?v=13';
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged, initializeAuth, inMemoryPersistence,
   createUserWithEmailAndPassword, updatePassword } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
@@ -659,6 +659,7 @@ function islemAdi(i) {
 }
 $('karolar').addEventListener('click', e => {
   const b = e.target.closest('[data-sk]'); if (!b) return;
+  if ($('oSube').options.length < 2) $('oSube').innerHTML = subeSecenekleri('Tüm şubeler');
   $('oSube').value = b.dataset.sk; $('oDurum').value = ''; $('oAra').value = ''; oLimit = 400;
   sekmeAc('ogrenci');
 });
@@ -708,12 +709,48 @@ function satirOgr(o) {
 ['oAra','oSube','oDurum'].forEach(id => $(id).addEventListener('input', () => { oLimit = 400; cizOgrenci(); }));
 $('oGovde').addEventListener('click', e => { if (e.target.closest('a')) return; const b = e.target.closest('[data-duzen]'); if (b) ogrAc(ogrenciler.find(o => o.id === b.dataset.duzen)); });
 $('oEkle').onclick = () => ogrAc(null);
-$('oIndir').onclick = () => {
+$('oIndir').onclick = async () => {
   const l = oFiltrele();
-  const ws = XLSX.utils.aoa_to_sheet([['Şube','Okul No','Öğrenci','Veli','Telefon','Durum'], ...l.map(o => [subeExcel(o.sk), o.no, o.ad, o.veli, o.tel ? Number(o.tel) : '', DURUM[o.durum]?.ad])]);
-  ws['!cols'] = [{wch:6},{wch:10},{wch:28},{wch:28},{wch:13},{wch:16}];
-  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Liste');
-  XLSX.writeFile(wb, `Ogrenci_Listesi_${$('oSube').value ? subeExcel($('oSube').value) + '_' : ''}${bugun()}.xlsx`);
+  if (!l.length) { tost('İndirilecek kayıt yok', 'hata'); return; }
+  const btn = $('oIndir'); const eski = btn.innerHTML; btn.disabled = true; btn.textContent = 'Hazırlanıyor…';
+  try {
+    await excelJSYukle();
+    const wb = new ExcelJS.Workbook(); wb.creator = OKUL_ADI; wb.created = new Date();
+    const sk = $('oSube').value, d = $('oDurum').value, q = $('oAra').value.trim();
+    const tarih = new Date().toLocaleString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    const filtre = [d ? $('oDurum').selectedOptions[0].textContent : '', q ? `Arama: “${q}”` : ''].filter(Boolean).join('   ·   ');
+    const say = k => l.filter(o => o.durum === k).length;
+    const ozetSatir = `Kayıt: ${l.length}   ·   Düzeltilen: ${say('duzeltildi')}   ·   Yeni: ${say('yeni')}   ·   Ayrılan: ${say('ayrildi')}`;
+    if (sk) {
+      const s = subeler[sk] || {}, r = subeOzet(sk);
+      xSayfa(wb, sayfaAdi(sk), {
+        baslik: `${subeAdi(sk)}${ozelMi(sk) ? '' : ' Şubesi'}${s.ogretmen ? ' · ' + s.ogretmen : ''}`,
+        alt: `${OKUL_ADI}   ·   ${ozetSatir}${filtre ? '   ·   ' + filtre : ''}   ·   ${r.durum === 'tamam' ? 'Öğretmen listeyi tamamladı' : 'Öğretmen listeyi henüz tamamlamadı'}   ·   ${tarih}`,
+        kolonlar: [{ h: 'Sıra', w: 6, orta: 1 }, { h: 'Okul No', w: 11, orta: 1 }, { h: 'Öğrenci Ad Soyad', w: 30 }, { h: 'Veli Ad Soyad', w: 28, eksik: 1 },
+          { h: 'Telefon', w: 20, fmt: XTEL, eksik: 1 }, { h: 'Durum', w: 13, durum: 1 }],
+        satirlar: l.map((o, i) => [i + 1, noSayi(o.no), o.ad, o.veli, telSayi(o.tel), XDURUM[o.durum]?.[2] || '']),
+        durumlar: l.map(o => o.durum),
+        renk: sk[0] === '0' ? 'FFF59E0B' : sk[0] === '5' ? 'FF64748B' : ['', 'FF0EA5E9', 'FF10B981', 'FF8B5CF6', 'FFEF4444'][sk[0]],
+      });
+    } else {
+      xSayfa(wb, 'Öğrenci Listesi', {
+        baslik: `${OKUL_ADI} · Öğrenci Listesi`,
+        alt: `${ozetSatir}${filtre ? '   ·   ' + filtre : ''}   ·   ${tarih}   ·   Sarı hücreler eksik bilgiyi gösterir.`,
+        kolonlar: [{ h: 'Sınıf', w: 9, orta: 1, kalin: 1 }, { h: 'Okul Numarası', w: 11, orta: 1 }, { h: 'Öğrenci Ad Soyad', w: 30 }, { h: 'Veli Ad Soyad', w: 28, eksik: 1 },
+          { h: 'Telefon Numarası', w: 20, fmt: XTEL, eksik: 1 }, { h: 'Durum', w: 13, durum: 1 }],
+        satirlar: l.map(o => [subeExcel(o.sk), noSayi(o.no), o.ad, o.veli, telSayi(o.tel), XDURUM[o.durum]?.[2] || '']),
+        durumlar: l.map(o => o.durum),
+      });
+    }
+    const buf = await wb.xlsx.writeBuffer();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+    a.download = `Ogrenci_Listesi_${sk ? subeExcel(sk).replace(/\s+/g, '_') + '_' : ''}${bugun()}.xlsx`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    tost('Excel hazırlandı', 'tamam');
+  } catch (err) { tost(hataMesaji(err), 'hata'); }
+  finally { btn.disabled = false; btn.innerHTML = eski; }
 };
 
 // ---------- Öğrenci düzenleme paneli ----------
@@ -759,8 +796,7 @@ $('ogrForm').addEventListener('submit', async e => {
   let h = false;
   ['aSube','aNo','aAd','aVeli','aTel'].forEach(a => alanHata(a, ''));
   if (!v.sk) { alanHata('aSube', 'Şube seçin'); h = true; }
-  if (!v.no) { alanHata('aNo', 'Okul numarası gerekli'); h = true; }
-  else { const t = ogrenciler.find(x => x.id !== aktif?.id && x.no === v.no && x.durum !== 'ayrildi'); if (t) { alanHata('aNo', `Bu numara ${subeAdi(t.sk)} şubesinde ${t.ad} adına kayıtlı`); h = true; } }
+  if (v.no) { const t = ogrenciler.find(x => x.id !== aktif?.id && x.no === v.no && x.durum !== 'ayrildi'); if (t) { alanHata('aNo', `Bu numara ${subeAdi(t.sk)} şubesinde ${t.ad} adına kayıtlı`); h = true; } }
   if (v.ad.length < 3) { alanHata('aAd', 'Ad soyad gerekli'); h = true; }
   if (v.tel && !telGecerli(v.tel)) { alanHata('aTel', '5 ile başlayan 10 hane olmalı'); h = true; }
   if (h) return;
