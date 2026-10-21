@@ -8,9 +8,9 @@
 <title>Veli Bilgileri · Yönetim</title>
 <script>
 // Sürüm kontrolü: GitHub'a yeni dosya yüklenince tarayıcı önbelleğini atlayıp yeni sürümü açar.
-(function(){var V='11';var u=new URL(location.href);fetch('surum.txt?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.text():''}).then(function(t){t=(t||'').trim();if(!t)return;if(t===V){if(u.searchParams.has('yv')){u.searchParams.delete('yv');u.searchParams.delete('r');history.replaceState(null,'',u.pathname+u.search+u.hash)}return}var once=Number(u.searchParams.get('r')||0);if(u.searchParams.get('yv')===t&&Date.now()-once<60000)return;u.searchParams.set('yv',t);u.searchParams.set('r',Date.now());location.replace(u.href)}).catch(function(){})})();
+(function(){var V='12';var u=new URL(location.href);fetch('surum.txt?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.text():''}).then(function(t){t=(t||'').trim();if(!t)return;if(t===V){if(u.searchParams.has('yv')){u.searchParams.delete('yv');u.searchParams.delete('r');history.replaceState(null,'',u.pathname+u.search+u.hash)}return}var once=Number(u.searchParams.get('r')||0);if(u.searchParams.get('yv')===t&&Date.now()-once<60000)return;u.searchParams.set('yv',t);u.searchParams.set('r',Date.now());location.replace(u.href)}).catch(function(){})})();
 </script>
-<link rel="stylesheet" href="ortak.css?v=11">
+<link rel="stylesheet" href="ortak.css?v=12">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <style>
@@ -251,7 +251,6 @@
       <div class="ust-satir">
         <h1>Veli Bilgi Güncelleme <small><span id="okulAdiUst"></span> <span class="canli" id="canli" title="Veriler anlık güncelleniyor">● Canlı</span></small></h1>
         <div class="ust-dugmeler">
-          <button class="btn" id="yenileBtn" title="Verileri yenile" aria-label="Yenile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg><span class="yazi">Yenile</span></button>
           <button class="btn ana" id="excelBtn" title="Excel indir" aria-label="Excel indir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span class="yazi">Excel indir</span></button>
           <button class="btn" id="cikisBtn" title="Çıkış" aria-label="Çıkış"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg><span class="yazi">Çıkış</span></button>
         </div>
@@ -453,7 +452,7 @@
 <script type="module">
 import { baglan, ozelAdlariTanit, ozelAnahtarBul, ozelMi, OZEL_ADLAR, firebaseConfig, OKUL_ADI, SUBE_ALANI, TUM_SUBELER, subeAnahtari, subeAdi, subeExcel, subeSira, subeEposta,
   baslikYap, telTemizle, telGecerli, telGoster, noTemizle, esc, aramaMetni, DURUM, durumHesapla, degisenAlanlar,
-  sifreUret, hataMesaji, tost, tarihGoster } from './ortak.js?v=11';
+  sifreUret, hataMesaji, tost, tarihGoster } from './ortak.js?v=12';
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged, initializeAuth, inMemoryPersistence,
   createUserWithEmailAndPassword, updatePassword } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
@@ -553,11 +552,7 @@ async function yukle() {
     dinle(query(collection(db, 'kayitlar'), orderBy('zaman', 'desc'), limit(40)), s => { sonKayitlar = s.docs.map(d => d.data({ serverTimestamps: 'estimate' })); }).catch(() => {}),
   ]);
 }
-$('yenileBtn').onclick = async () => {
-  $('yenileBtn').disabled = true;
-  try { await yukle(); ciz(); tost('Veriler yenilendi (zaten anlık güncelleniyor)'); } catch (err) { tost(hataMesaji(err), 'hata'); }
-  $('yenileBtn').disabled = false;
-};
+
 
 // ================= SEKME =================
 let sekme = 'pano';
@@ -1147,13 +1142,15 @@ $('gecisOnizle').onclick = () => {
       ${p.eksikSube.length ? `<b>Yeni açılacak şubeler:</b> ${p.eksikSube.map(subeAdi).join(', ')} (otomatik şifreyle).<br>` : ''}
       Tüm şubelerin “tamamlandı” işareti ve kilidi kaldırılır, işlem geçmişi temizlenir, son tarih sıfırlanır.</div>
     ${ogrSatir ? `<details style="margin-bottom:12px"><summary style="cursor:pointer;font-weight:600">Öğretmen yerleşimini göster</summary><table class="tablo" style="margin-top:8px;max-width:460px"><tbody>${ogrSatir}</tbody></table></details>` : ''}
-    <button class="btn kirmizi" id="gecisBaslat">Yedeği indir ve geçişi başlat</button>
+    <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn kirmizi" id="gecisBaslat">Yedeği indir ve geçişi başlat</button><button class="btn" id="gecisIptal">İptal</button></div>
     <div class="cubuk-kucuk gizli" id="gecisCubuk"><i></i></div>`;
+  $('gecisIptal').onclick = () => { $('gecisAlan').innerHTML = ''; tost('Geçiş iptal edildi, hiçbir şey değişmedi'); };
   $('gecisBaslat').onclick = () => onayIste('Yeni eğitim yılına geçilsin mi?',
     `${p.sil.length} öğrenci silinecek, ${p.yukselt.length} öğrenci üst sınıfa geçecek. Önce Excel yedeği indirilecek. Bu işlem geri alınamaz.`, () => gecisYap(), 'GEÇİŞ');
 };
 async function gecisYap() {
   const b = $('gecisBaslat'); b.disabled = true; b.textContent = 'Yedek indiriliyor…';
+  $('gecisIptal')?.remove();   // işlem başladıktan sonra iptal edilemez
   const p = gecisPlani();
   const oncekiSifre = { ...sifreler };
   const donem = Date.now();
