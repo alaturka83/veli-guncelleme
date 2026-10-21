@@ -9,9 +9,9 @@ service cloud.firestore {
     function yonetici() {
       return girisli() && request.auth.token.email in ['yalcinisa@hotmail.com'];
     }
-    // Şube hesapları: 0a@… (anasınıfı A) · 1a@sube.example.com … 4m@sube.example.com  (config.js → SUBE_ALANI ile aynı olmalı)
+    // Şube hesapları: 0a@… (anasınıfı A) · 5a@… (özel adlı sınıflar) · 1a@sube.example.com … 4m@sube.example.com  (config.js → SUBE_ALANI ile aynı olmalı)
     function ogretmen() {
-      return girisli() && request.auth.token.email.matches('^[0-4][a-m]@sube[.]example[.]com$');
+      return girisli() && request.auth.token.email.matches('^[0-5][a-m]@sube[.]example[.]com$');
     }
     function benimSube() { return request.auth.token.email.split('@')[0]; }
     function subeAcik() {

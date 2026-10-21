@@ -1,5 +1,5 @@
 // Ortak yardımcılar — öğretmen ve yönetici ekranları birlikte kullanır.
-import { firebaseConfig, OKUL_ADI, SUBE_ALANI } from './config.js?v=8';
+import { firebaseConfig, OKUL_ADI, SUBE_ALANI } from './config.js?v=9';
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getAuth } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { getFirestore } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
@@ -23,23 +23,38 @@ export const TUM_SUBELER = [
 ];
 function anahtar(g, h) { return g + (h === 'İ' ? 'i' : h.toLowerCase()); }
 
-/** "1A", "1/A", "1-a", "1 İ" → "1a" / "1i"; "ANA A", "Anasınıfı-B" → "0a" / "0b". Tanınmazsa null. */
+// Özel adlı sınıflar (ör. "Uyum Sınıfı") 5a…5m anahtarlarıyla tutulur; adları şube kaydından okunur.
+export const OZEL_ADLAR = {};                       // "5a" → "Uyum Sınıfı"
+export const ozelMi = sk => !!sk && sk[0] === '5';
+const adKarsilastir = v => String(v || '').toLocaleLowerCase('tr-TR').replace(/[\s\/\-\.]/g, '');
+/** Şube kayıtlarından özel sınıf adlarını tanıtır */
+export function ozelAdlariTanit(subeler) {
+  for (const [sk, s] of Object.entries(subeler || {})) if (ozelMi(sk) && s?.sinif) OZEL_ADLAR[sk] = s.sinif;
+}
+export function ozelAnahtarBul(ad) {
+  const a = adKarsilastir(ad);
+  return Object.keys(OZEL_ADLAR).find(k => adKarsilastir(OZEL_ADLAR[k]) === a) || null;
+}
+
+/** "1A", "1/A", "1-a", "1 İ" → "1a" / "1i"; "ANA A", "Anasınıfı-B" → "0a" / "0b"; "Uyum Sınıfı" → kayıtlı özel anahtar. Tanınmazsa null. */
 export function subeAnahtari(v) {
   if (v == null) return null;
+  const ozel = ozelAnahtarBul(v); if (ozel) return ozel;
   const s = String(v).trim().replace(/[\s\/\-\.]/g, '').toLocaleUpperCase('tr-TR');
   let g, h, m = s.match(/^(ANASINIFI|ANASINIF|ANA)(.)$/u);
   if (m) { g = 0; h = m[2]; }
-  else { m = s.match(/^([0-4])(.)$/u); if (!m) return null; g = Number(m[1]); h = m[2]; }
+  else { m = s.match(/^([0-5])(.)$/u); if (!m) return null; g = Number(m[1]); h = m[2]; }
   if (h === 'I') h = 'İ';
   if (!HARFLER.includes(h)) return null;
   return anahtar(g, h);
 }
 /** "1i" → "1/İ", "0a" → "Ana/A" */
-export function subeAdi(sk) { return sk ? (sk[0] === '0' ? 'Ana' : sk[0]) + '/' + harf(sk) : ''; }
+export function subeAdi(sk) { if (!sk) return ''; if (ozelMi(sk)) return OZEL_ADLAR[sk] || 'Özel Sınıf ' + harf(sk); return (sk[0] === '0' ? 'Ana' : sk[0]) + '/' + harf(sk); }
 /** "1i" → "1İ", "0a" → "ANA A" (Excel biçimi) */
-export function subeExcel(sk) { return sk ? (sk[0] === '0' ? 'ANA ' : sk[0]) + harf(sk) : ''; }
+export function subeExcel(sk) { if (!sk) return ''; if (ozelMi(sk)) return subeAdi(sk); return (sk[0] === '0' ? 'ANA ' : sk[0]) + harf(sk); }
 function harf(sk) { return sk[1] === 'i' ? 'İ' : sk[1].toUpperCase(); }
-export function subeSira(a, b) { return TUM_SUBELER.indexOf(a) - TUM_SUBELER.indexOf(b); }
+const sira = sk => { const i = TUM_SUBELER.indexOf(sk); return i >= 0 ? i : 1000 + (sk ? sk.charCodeAt(0) * 40 + sk.charCodeAt(1) : 0); };
+export function subeSira(a, b) { return sira(a) - sira(b); }
 export const subeEposta = sk => `${sk}@${SUBE_ALANI}`;
 
 // ---------- Metin / telefon ----------
