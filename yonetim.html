@@ -845,13 +845,15 @@ $('excelDosya').addEventListener('change', async e => {
     const wb = XLSX.read(await f.arrayBuffer(), { type: 'array' });
     const ws = wb.Sheets[wb.SheetNames[0]];
     const satirlar = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: '' });
-    const kayit = []; const atlanan = [];
+    const kayit = []; let baslik = 0;
+    const tanimsiz = {};   // sistemde olmayan şubelerin öğrencileri: etiket → sayı (aktarılmaz)
     for (const r of satirlar) {
       if (!r.some(x => String(x).trim())) continue;
-      const sk = subeAnahtari(r[0]);
-      if (!sk) { atlanan.push(r); continue; }
       const ad = baslikYap(r[2]);
-      if (!ad) { atlanan.push(r); continue; }
+      const etiket = String(r[0] ?? '').trim();
+      const sk = subeAnahtari(r[0]);
+      if (!ad || (!sk && /sınıf|sinif|liste/i.test(etiket))) { baslik++; continue; }
+      if (!sk || !subeler[sk]) { const e = sk ? subeAdi(sk) : (etiket || '(boş)'); tanimsiz[e] = (tanimsiz[e] || 0) + 1; continue; }
       const v = { sk, no: noTemizle(r[1]), ad, veli: baslikYap(r[3]), tel: telTemizle(r[4]) };
       if (v.tel && !telGecerli(v.tel)) v.telHatali = true;
       kayit.push(v);
@@ -859,11 +861,15 @@ $('excelDosya').addEventListener('change', async e => {
     onizlemeVeri = kayit;
     const sube = {}; kayit.forEach(k => sube[k.sk] = (sube[k.sk] || 0) + 1);
     const telYok = kayit.filter(k => !k.tel).length, veliYok = kayit.filter(k => !k.veli).length, telHatali = kayit.filter(k => k.telHatali).length;
-    const subesiz = Object.keys(sube).filter(sk => !subeler[sk]);
+    const tanimsizSay = Object.values(tanimsiz).reduce((a, b) => a + b, 0);
+    if (!kayit.length) {
+      $('onizleme').innerHTML = `<div class="hata-kutu" style="margin-top:12px">Aktarılacak öğrenci bulunamadı. ${Object.keys(subeler).length ? 'Excel’deki şubelerin hiçbiri sistemde tanımlı değil.' : 'Önce 1. adımda şubeleri oluşturun.'}</div>`;
+      return;
+    }
     $('onizleme').innerHTML = `<div class="bilgi-kutu" style="margin-top:12px">
-      <b>${kayit.length}</b> öğrenci · <b>${Object.keys(sube).length}</b> şube bulundu. ${atlanan.length ? `${atlanan.length} başlık/boş satır atlandı.` : ''}<br>
+      <b>${kayit.length}</b> öğrenci · <b>${Object.keys(sube).length}</b> şube aktarılmaya hazır. ${baslik ? `${baslik} başlık satırı atlandı.` : ''}<br>
       Telefonu boş: ${telYok} · Veli adı boş: ${veliYok}${telHatali ? ` · <b>Hatalı telefon: ${telHatali}</b> (yine de aktarılır, öğretmen düzeltir)` : ''}</div>
-      ${subesiz.length ? `<div class="uyari-kutu">Şu şubeler henüz oluşturulmamış: ${subesiz.map(subeAdi).join(', ')}. Öğrenciler aktarılır ama bu şubelerin öğretmeni giriş yapamaz. Önce 1. adımı tamamlayın.</div>` : ''}
+      ${tanimsizSay ? `<div class="uyari-kutu">⚠ Sistemde tanımlı olmayan şubelere ait <b>${tanimsizSay}</b> öğrenci aktarılmayacak: ${Object.entries(tanimsiz).map(([e, n]) => `${esc(e)} (${n})`).join(', ')}.<br><span style="font-weight:500">Bu öğrencilerin de aktarılmasını istiyorsanız önce 1. adımda o şubeleri oluşturup dosyayı yeniden seçin.</span></div>` : ''}
       <div style="font-size:13px;color:var(--soluk);margin-bottom:10px">${Object.entries(sube).sort((a, b) => subeSira(a[0], b[0])).map(([s, n]) => `${subeAdi(s)}: ${n}`).join(' · ')}</div>
       ${ogrenciler.length ? `<div class="uyari-kutu">Sistemde zaten ${ogrenciler.length} öğrenci kaydı var. Aktarım öncesinde mevcut kayıtlar SİLİNECEK.</div>` : ''}
       <button class="btn ana" id="aktarBtn">${kayit.length} öğrenciyi aktar</button>`;
