@@ -8,9 +8,9 @@
 <title>Veli Bilgileri · Yönetim</title>
 <script>
 // Sürüm kontrolü: GitHub'a yeni dosya yüklenince tarayıcı önbelleğini atlayıp yeni sürümü açar.
-(function(){var V='22';var u=new URL(location.href);fetch('surum.txt?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.text():''}).then(function(t){t=(t||'').trim();if(!t)return;if(t===V){if(u.searchParams.has('yv')){u.searchParams.delete('yv');u.searchParams.delete('r');history.replaceState(null,'',u.pathname+u.search+u.hash)}return}var once=Number(u.searchParams.get('r')||0);if(u.searchParams.get('yv')===t&&Date.now()-once<60000)return;u.searchParams.set('yv',t);u.searchParams.set('r',Date.now());location.replace(u.href)}).catch(function(){})})();
+(function(){var V='23';var u=new URL(location.href);fetch('surum.txt?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.text():''}).then(function(t){t=(t||'').trim();if(!t)return;if(t===V){if(u.searchParams.has('yv')){u.searchParams.delete('yv');u.searchParams.delete('r');history.replaceState(null,'',u.pathname+u.search+u.hash)}return}var once=Number(u.searchParams.get('r')||0);if(u.searchParams.get('yv')===t&&Date.now()-once<60000)return;u.searchParams.set('yv',t);u.searchParams.set('r',Date.now());location.replace(u.href)}).catch(function(){})})();
 </script>
-<link rel="stylesheet" href="ortak.css?v=22">
+<link rel="stylesheet" href="ortak.css?v=23">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <style>
@@ -113,6 +113,9 @@
   .kur-ikon svg{width:22px;height:22px}
   .kur-ikon.mavi{background:var(--ana-acik);color:var(--ana)} .kur-ikon.yesil{background:var(--yesil-acik);color:var(--yesil)}
   .kur-ikon.mor{background:var(--mor-acik);color:var(--mor)} .kur-ikon.kirmizi{background:var(--kirmizi-acik);color:var(--kirmizi)}
+  .kur-ikon.turuncu{background:#ffedd5;color:#c2410c}
+  .yedek-izgara{display:flex;gap:10px;flex-wrap:wrap}
+  .yedek-izgara .btn{min-height:46px}
   .kur-baslik{flex:1;min-width:0}
   .kur-baslik small{display:block;font-size:10.5px;font-weight:800;letter-spacing:.7px;color:var(--cok-soluk)}
   .kur-baslik h2{margin:1px 0 0;font-size:16.5px}
@@ -294,6 +297,7 @@
     .surukle{padding:20px 12px}
     .tehlike-satir{flex-direction:column;align-items:stretch;gap:10px;padding:12px 14px}
     .tehlike-satir .btn{width:100%}
+    .yedek-izgara .btn{flex:1 1 100%}
     .tehlike-bas .btn{padding:6px 8px}
     .kur-sayfa{font-size:18px}
     .adim{gap:10px}
@@ -478,8 +482,8 @@
             <label class="surukle" id="surukleAlan">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
               <b id="surukleYazi">Excel dosyasını seçin ya da buraya sürükleyin</b>
-              <small>.xlsx · .xls · .csv — dosya yalnızca bu tarayıcıda okunur</small>
-              <input type="file" id="excelDosya" accept=".xlsx,.xls,.csv">
+              <small>.xlsx · .xls · .csv · yedek dosyası (.json) — dosya yalnızca bu tarayıcıda okunur</small>
+              <input type="file" id="excelDosya" accept=".xlsx,.xls,.csv,.json">
             </label>
             <div class="kur-not">🔒 Öğrenci Excel’ini GitHub klasörüne koymayın.</div>
             <div id="onizleme"></div>
@@ -507,9 +511,27 @@
           </label>
           <div class="kur-satir">
             <button class="btn" id="gecisOnizle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>Geçişi önizle</button>
-            <span class="soluk" style="font-size:12.5px">Önizleme hiçbir veriyi değiştirmez. Geçiş öncesinde tam yedek otomatik indirilir.</span>
+            <span class="soluk" style="font-size:12.5px">Önizleme hiçbir veriyi değiştirmez. Geçiş öncesinde tam yedek (.json) otomatik indirilir.</span>
           </div>
           <div id="gecisAlan"></div>
+        </div>
+      </div>
+
+      <!-- YEDEKLEME -->
+      <div class="kutu kur-kart">
+        <div class="kur-bas">
+          <div class="kur-ikon turuncu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg></div>
+          <div class="kur-baslik"><small>GÜVENLİK</small><h2>Yedekleme ve geri yükleme</h2></div>
+          <span class="rozet gri" id="kurDurum4">Yedek alınmadı</span>
+        </div>
+        <div class="kur-govde">
+          <p class="kur-aciklama">Yedek dosyası (.json) sistemin tam bir kopyasıdır: tüm öğrenciler, durumları, devamsızlık işaretleri, şubeler ve öğretmen adları. Bir hata olursa bu dosyayla sistemi o ana geri döndürebilirsiniz. Şube şifreleri güvenlik için yedeğe yazılmaz ve geri yüklemede değişmez. Excel çıktısı ise okumak ve yazdırmak içindir.</p>
+          <div class="yedek-izgara">
+            <button class="btn ana" id="yedekIndirBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Yedek indir (.json)</button>
+            <label class="btn" id="yedekSecBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Yedekten geri yükle<input type="file" id="yedekDosya" accept=".json,application/json" style="display:none"></label>
+          </div>
+          <div id="yedekOnizleme"></div>
+          <div class="cubuk-kucuk gizli" id="yedekCubuk"><i></i></div>
         </div>
       </div>
 
@@ -518,7 +540,7 @@
         <div class="kur-bas tehlike-bas">
           <div class="kur-ikon kirmizi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
           <div class="kur-baslik"><small>DİKKAT</small><h2>Tehlikeli işlemler</h2></div>
-          <button type="button" class="btn kucuk" id="tehlikeYedek" title="Önce yedek alın">⬇ Yedek indir</button>
+          <button type="button" class="btn kucuk" id="tehlikeYedek" title="Önce yedek alın">⬇ Yedek al (.json)</button>
         </div>
         <div class="tehlike-satir">
           <div><b>Tüm öğrenci kayıtlarını sil</b><small>Bütün öğrenciler ve öğretmenlerin yaptığı değişiklikler kalıcı olarak silinir. Şubeler ve şifreler kalır.</small></div>
@@ -589,8 +611,8 @@
 <script type="module">
 import { baglan, ozelAdlariTanit, ozelAnahtarBul, ozelMi, OZEL_ADLAR, firebaseConfig, OKUL_ADI, SUBE_ALANI, TUM_SUBELER, subeAnahtari, subeAdi, subeExcel, subeSira, subeEposta,
   baslikYap, telTemizle, telGecerli, telGoster, noTemizle, esc, aramaMetni, DURUM, durumHesapla, degisenAlanlar,
-  sifreUret, hataMesaji, tost, tarihGoster } from './ortak.js?v=22';
-import { bugun, telSayi, excelJSYukle, XR, XDURUM, XTEL, sayfaAdi, noSayi, dolgu, xSayfa, subeSayfalari, subeRengi, excelKaydet } from './excel.js?v=22';
+  sifreUret, hataMesaji, tost, tarihGoster } from './ortak.js?v=23';
+import { bugun, telSayi, excelJSYukle, XR, XDURUM, XTEL, sayfaAdi, noSayi, dolgu, xSayfa, subeSayfalari, subeRengi, excelKaydet } from './excel.js?v=23';
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged, initializeAuth, inMemoryPersistence,
   createUserWithEmailAndPassword, updatePassword } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
@@ -1149,11 +1171,14 @@ function cizKurulum() {
   const aktif = ogrenciler.filter(o => o.durum !== 'ayrildi').length;
   rozet('kurDurum2', aktif ? 'yesil' : 'gri', aktif ? `✓ ${aktif} öğrenci` : 'Bekliyor');
   const g = ayar.sonGecis?.toDate ? ayar.sonGecis.toDate() : null;
+  let sy = null; try { sy = localStorage.getItem('sonYedek'); } catch {}
+  if (sy) { const gun = Math.floor((Date.now() - new Date(sy)) / 864e5); rozet('kurDurum4', gun > 7 ? 'sari' : 'yesil', gun === 0 ? '✓ Bugün yedeklendi' : `Son yedek: ${gun} gün önce`); }
+  else rozet('kurDurum4', 'gri', 'Bu cihazda yedek alınmadı');
   rozet('kurDurum3', g ? 'mor' : 'gri', g ? `Son: ${g.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' })}` : 'Henüz yapılmadı');
 }
 $('ogretmenListe').addEventListener('input', satirSay);
 $('listeDoldur').onclick = () => { $('ogretmenListe').value = sistemListesi(); satirSay(); tost('Sistemdeki şube listesi getirildi'); };
-$('tehlikeYedek').onclick = () => excelIndir('Yedek');
+$('tehlikeYedek').onclick = () => yedekIndir();
 // Excel sürükle-bırak
 ['dragenter', 'dragover'].forEach(t => $('surukleAlan').addEventListener(t, e => { e.preventDefault(); $('surukleAlan').classList.add('ustunde'); }));
 ['dragleave', 'drop'].forEach(t => $('surukleAlan').addEventListener(t, e => { e.preventDefault(); $('surukleAlan').classList.remove('ustunde'); }));
@@ -1224,6 +1249,12 @@ async function subeleriKur(liste) {
 let onizlemeVeri = null;
 $('excelDosya').addEventListener('change', async e => {
   const f = e.target.files[0]; if (!f) return;
+  if (/\.json$/i.test(f.name)) {   // yedek dosyası bırakıldıysa geri yükleme önizlemesine yönlendir
+    $('onizleme').innerHTML = `<div class="bilgi-kutu" style="margin-top:12px">Bu bir yedek dosyası. Geri yükleme önizlemesi aşağıdaki <b>Yedekleme</b> bölümünde açıldı.</div>`;
+    $('excelDosya').value = ''; $('surukleYazi').textContent = 'Excel dosyasını seçin ya da buraya sürükleyin';
+    yedekDosyasiOku(f); $('yedekOnizleme').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
   try {
     const wb = XLSX.read(await f.arrayBuffer(), { type: 'array' });
     const ws = wb.Sheets['Genel Liste'] || wb.Sheets[wb.SheetNames[0]];   // bu sistemin kendi Excel'i de geri yüklenebilir
@@ -1349,7 +1380,7 @@ $('gecisOnizle').onclick = () => {
     <div class="cubuk-kucuk gizli" id="gecisCubuk"><i></i></div>`;
   $('gecisIptal').onclick = () => { $('gecisAlan').innerHTML = ''; tost('Geçiş iptal edildi, hiçbir şey değişmedi'); };
   $('gecisBaslat').onclick = () => onayIste('Yeni eğitim yılına geçilsin mi?',
-    `${p.sil.length} öğrenci silinecek, ${p.yukselt.length} öğrenci üst sınıfa geçecek. Önce Excel yedeği indirilecek. Bu işlem geri alınamaz.`, () => gecisYap(), 'GEÇİŞ');
+    `${p.sil.length} öğrenci silinecek, ${p.yukselt.length} öğrenci üst sınıfa geçecek. Önce tam yedek (.json) indirilecek; gerekirse o dosyayla geri dönebilirsiniz.`, () => gecisYap(), 'GEÇİŞ');
 };
 async function gecisYap() {
   const b = $('gecisBaslat'); b.disabled = true; b.textContent = 'Yedek indiriliyor…';
@@ -1358,7 +1389,7 @@ async function gecisYap() {
   const oncekiSifre = { ...sifreler };
   const donem = Date.now();
   try {
-    if (!(await excelIndir('YEDEK_Gecis_Oncesi'))) throw new Error('Yedek alınamadı, geçiş başlatılmadı.');
+    if (!(await yedekIndir('YEDEK_Gecis_Oncesi'))) throw new Error('Yedek alınamadı, geçiş başlatılmadı.');
     if (p.eksikSube.length) {
       b.textContent = 'Yeni şubeler açılıyor…';
       $('subeGunluk').textContent = '';
@@ -1400,6 +1431,76 @@ async function gecisYap() {
       <span style="font-weight:500">Sıradaki adımlar: 1) Yeni 1. sınıf ve anasınıfı listelerini 2. adımdan <b>“Mevcut kayıtlara ekle”</b> ile yükleyin ya da öğretmenler kendileri eklesin. 2) Öğretmen adlarını Şubeler sekmesinden kontrol edin. 3) Son tarihi belirleyip mesajları gönderin.</span></div>`;
     tost('Geçiş tamamlandı', 'tamam');
   } catch (err) { tost(err.message || hataMesaji(err), 'hata'); b.disabled = false; b.textContent = 'Tekrar dene'; }
+}
+
+// ================= YEDEK (.json) =================
+const yedekTarihEtiketi = () => { const d = new Date(); return `${bugun()}_${String(d.getHours()).padStart(2, '0')}${String(d.getMinutes()).padStart(2, '0')}`; };
+/** Firestore tarihlerini { __tarih: ISO } biçiminde yazar */
+function yedegeHazirla(v) {
+  return JSON.parse(JSON.stringify(v, function (k, x) { const ham = this[k]; return ham && typeof ham.toDate === 'function' ? { __tarih: ham.toDate().toISOString() } : x; }));
+}
+function yedektenCevir(v) {
+  if (Array.isArray(v)) return v.map(yedektenCevir);
+  if (v && typeof v === 'object') { if (v.__tarih) return new Date(v.__tarih); const o = {}; for (const k in v) o[k] = yedektenCevir(v[k]); return o; }
+  return v;
+}
+async function yedekIndir(onEk = 'Yedek') {
+  try {
+    const veri = { tur: 'veli-guncelleme-yedek', surum: 1, olusturma: new Date().toISOString(), okul: OKUL_ADI,
+      subeler: yedegeHazirla(subeler), ogrenciler: yedegeHazirla(ogrenciler), ayar: yedegeHazirla(ayar) };
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(veri, null, 1)], { type: 'application/json' }));
+    a.download = `${onEk}_${yedekTarihEtiketi()}.json`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    try { localStorage.setItem('sonYedek', new Date().toISOString()); } catch {}
+    tost(`Yedek indirildi (${ogrenciler.length} öğrenci)`, 'tamam'); ciz();
+    return true;
+  } catch (err) { tost('Yedek alınamadı: ' + (err.message || err), 'hata'); return false; }
+}
+$('yedekIndirBtn').onclick = () => yedekIndir();
+$('yedekDosya').addEventListener('change', e => { const f = e.target.files[0]; if (f) yedekDosyasiOku(f); e.target.value = ''; });
+let bekleyenYedek = null;
+async function yedekDosyasiOku(f) {
+  try {
+    const veri = JSON.parse(await f.text());
+    if (veri?.tur !== 'veli-guncelleme-yedek' || !Array.isArray(veri.ogrenciler)) throw new Error('Bu dosya bu sistemin yedeği değil.');
+    bekleyenYedek = veri;
+    const t = new Date(veri.olusturma).toLocaleString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    const aktif = veri.ogrenciler.filter(o => o.durum !== 'ayrildi').length;
+    $('yedekOnizleme').innerHTML = `<div class="uyari-kutu" style="margin-top:12px;font-weight:500">
+        <b>📄 ${esc(f.name)}</b><br>Yedek tarihi: <b>${t}</b> · ${esc(veri.okul || '')}<br>
+        ${veri.ogrenciler.length} öğrenci kaydı (${aktif} aktif) · ${Object.keys(veri.subeler || {}).length} şube<br>
+        <span style="color:var(--kirmizi)">Geri yüklenince sistemdeki <b>${ogrenciler.length}</b> öğrenci kaydı silinip yedekteki hali yazılır. Bu tarihten sonra öğretmenlerin yaptığı değişiklikler kaybolur.</span></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn kirmizi" id="yedekYukleBtn">Yedeği geri yükle</button><button class="btn" id="yedekIptalBtn">İptal</button></div>`;
+    $('yedekIptalBtn').onclick = () => { bekleyenYedek = null; $('yedekOnizleme').innerHTML = ''; };
+    $('yedekYukleBtn').onclick = () => onayIste('Yedek geri yüklensin mi?', `Mevcut ${ogrenciler.length} kayıt silinip ${t} tarihli yedekteki ${veri.ogrenciler.length} kayıt yazılacak. Emin değilseniz önce şimdiki halin yedeğini alın.`, yedekGeriYukle, 'GERİ YÜKLE');
+  } catch (err) { $('yedekOnizleme').innerHTML = `<div class="hata-kutu" style="margin-top:12px">Yedek okunamadı: ${esc(err.message)}</div>`; }
+}
+async function yedekGeriYukle() {
+  const veri = bekleyenYedek; if (!veri) return;
+  const b = $('yedekYukleBtn'); b.disabled = true; $('yedekIptalBtn')?.remove();
+  const cubuk = $('yedekCubuk'); cubuk.classList.remove('gizli');
+  try {
+    b.textContent = 'Mevcut kayıtlar siliniyor…';
+    await topluSil('ogrenciler');
+    const islemler = [];
+    for (const ham of veri.ogrenciler) {
+      const { id, ...o } = yedektenCevir(ham);
+      islemler.push(bt => bt.set(id ? doc(db, 'ogrenciler', id) : doc(collection(db, 'ogrenciler')), o));
+    }
+    for (const [sk, sb] of Object.entries(veri.subeler || {})) islemler.push(bt => bt.set(doc(db, 'subeler', sk), yedektenCevir(sb)));
+    for (let i = 0; i < islemler.length; i += 400) {
+      const bt = writeBatch(db); islemler.slice(i, i + 400).forEach(f => f(bt)); await bt.commit();
+      const n = Math.min(i + 400, islemler.length);
+      cubuk.firstElementChild.style.width = Math.round(n / islemler.length * 100) + '%'; b.textContent = `Yazılıyor… ${n}/${islemler.length}`;
+    }
+    await setDoc(doc(db, 'genel', 'ayar'), yedektenCevir(veri.ayar || {}));
+    await topluSil('kayitlar').catch(() => {});
+    bekleyenYedek = null;
+    $('yedekOnizleme').innerHTML = `<div class="bilgi-kutu" style="margin-top:12px;background:var(--yesil-acik);color:var(--yesil)">✓ Yedek geri yüklendi: ${veri.ogrenciler.length} öğrenci kaydı ve ${Object.keys(veri.subeler || {}).length} şube.</div>`;
+    tost('Yedek geri yüklendi', 'tamam');
+  } catch (err) { tost(hataMesaji(err), 'hata'); b.disabled = false; b.textContent = 'Tekrar dene'; }
 }
 
 // ================= EXCEL =================
