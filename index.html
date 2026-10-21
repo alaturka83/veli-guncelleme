@@ -272,7 +272,7 @@ function girisHatasi(m) { $('girisHata').textContent = m; $('girisHata').classLi
 $('cikisBtn').onclick = async () => { await signOut(auth); };
 
 onAuthStateChanged(auth, async user => {
-  const m = user?.email?.match(new RegExp('^([1-4][a-m])@' + SUBE_ALANI.replace(/\./g, '\\.') + '$'));
+  const m = user?.email?.match(new RegExp('^([0-4][a-m])@' + SUBE_ALANI.replace(/\./g, '\\.') + '$'));
   if (!m) { if (user) await signOut(auth); girisHazirla(); return; }
   if (hedefSk && hedefSk !== m[1]) { await signOut(auth); return; }   // başka şubenin linki açıldı
   sk = m[1]; hedefSk = sk;

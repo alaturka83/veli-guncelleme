@@ -1,0 +1,68 @@
+rules_version = '2';
+// VELİ BİLGİ GÜNCELLEME — Firestore güvenlik kuralları
+// Firebase Console → Firestore Database → Kurallar (Rules) sekmesine olduğu gibi yapıştırıp "Yayınla"ya basın.
+// Yönetici eklemek için aşağıdaki listeye e-posta ekleyin (ör. müdür).
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function girisli() { return request.auth != null; }
+    function yonetici() {
+      return girisli() && request.auth.token.email in ['yalcinisa@hotmail.com'];
+    }
+    // Şube hesapları: 0a@… (anasınıfı A) · 1a@sube.example.com … 4m@sube.example.com  (config.js → SUBE_ALANI ile aynı olmalı)
+    function ogretmen() {
+      return girisli() && request.auth.token.email.matches('^[0-4][a-m]@sube[.]example[.]com$');
+    }
+    function benimSube() { return request.auth.token.email.split('@')[0]; }
+    function subeAcik() {
+      return get(/databases/$(database)/documents/subeler/$(benimSube())).data.get('kilitli', false) != true;
+    }
+    function gecerliDurum(d) { return d in ['bekliyor', 'dogru', 'duzeltildi', 'ayrildi', 'yeni']; }
+
+    // Genel ayarlar (son tarih): herkes okur, yönetici yazar
+    match /genel/{belge} {
+      allow read: if girisli();
+      allow write: if yonetici();
+    }
+
+    // Şifreler vb. — yalnızca yönetici
+    match /yonetim/{belge} {
+      allow read, write: if yonetici();
+    }
+
+    // Şubeler: öğretmen yalnızca kendi şubesini okur, sadece "tamamlandı" bilgisini değiştirebilir
+    match /subeler/{sk} {
+      allow read: if yonetici() || (ogretmen() && benimSube() == sk);
+      allow write: if yonetici();
+      allow update: if ogretmen() && benimSube() == sk
+        && resource.data.get('kilitli', false) != true
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['tamamlandi', 'tamamTarih']);
+    }
+
+    // Öğrenciler: öğretmen yalnızca kendi şubesindekileri görür ve düzenler
+    match /ogrenciler/{id} {
+      allow read: if yonetici() || (ogretmen() && resource.data.sk == benimSube());
+
+      allow create: if yonetici() || (ogretmen() && subeAcik()
+        && request.resource.data.sk == benimSube()
+        && request.resource.data.durum == 'yeni'
+        && request.resource.data.orj == null);
+
+      allow update: if yonetici() || (ogretmen() && subeAcik()
+        && resource.data.sk == benimSube()
+        && request.resource.data.sk == benimSube()
+        && request.resource.data.orj == resource.data.orj
+        && gecerliDurum(request.resource.data.durum));
+
+      allow delete: if yonetici() || (ogretmen() && subeAcik()
+        && resource.data.sk == benimSube()
+        && resource.data.durum == 'yeni');
+    }
+
+    // İşlem geçmişi: öğretmen kendi şubesi için yazar, yalnızca yönetici okur
+    match /kayitlar/{id} {
+      allow create: if yonetici() || (ogretmen() && request.resource.data.sk == benimSube());
+      allow read, update, delete: if yonetici();
+    }
+  }
+}

@@ -12,28 +12,29 @@ export const db = getFirestore(app);
 // ---------- Şubeler ----------
 const HARFLER_1 = ['A','B','C','D','E','F','G','H','İ','J'];
 const HARFLER = ['A','B','C','D','E','F','G','H','İ','J','K','L','M'];
+const HARFLER_ANA = ['A','B','C','D','E','F'];
 export const TUM_SUBELER = [
+  ...HARFLER_ANA.map(h => anahtar(0, h)),
   ...HARFLER_1.map(h => anahtar(1, h)),
   ...[2,3,4].flatMap(g => HARFLER.map(h => anahtar(g, h)))
 ];
 function anahtar(g, h) { return g + (h === 'İ' ? 'i' : h.toLowerCase()); }
 
-/** "1A", "1/A", "1-a", "1 İ" → "1a" / "1i". Tanınmazsa null. */
+/** "1A", "1/A", "1-a", "1 İ" → "1a" / "1i"; "ANA A", "Anasınıfı-B" → "0a" / "0b". Tanınmazsa null. */
 export function subeAnahtari(v) {
   if (v == null) return null;
-  const s = String(v).trim().replace(/[\s\/\-\.]/g, '');
-  const m = s.match(/^([1-4])(.)$/u);
-  if (!m) return null;
-  let h = m[2];
-  if (h === 'i' || h === 'İ' || h === 'I' || h === 'ı') h = 'İ';
-  else h = h.toLocaleUpperCase('tr-TR');
+  const s = String(v).trim().replace(/[\s\/\-\.]/g, '').toLocaleUpperCase('tr-TR');
+  let g, h, m = s.match(/^(ANASINIFI|ANASINIF|ANA)(.)$/u);
+  if (m) { g = 0; h = m[2]; }
+  else { m = s.match(/^([0-4])(.)$/u); if (!m) return null; g = Number(m[1]); h = m[2]; }
+  if (h === 'I') h = 'İ';
   if (!HARFLER.includes(h)) return null;
-  return anahtar(Number(m[1]), h);
+  return anahtar(g, h);
 }
-/** "1i" → "1/İ" */
-export function subeAdi(sk) { return sk ? sk[0] + '/' + harf(sk) : ''; }
-/** "1i" → "1İ" (Excel biçimi) */
-export function subeExcel(sk) { return sk ? sk[0] + harf(sk) : ''; }
+/** "1i" → "1/İ", "0a" → "Ana/A" */
+export function subeAdi(sk) { return sk ? (sk[0] === '0' ? 'Ana' : sk[0]) + '/' + harf(sk) : ''; }
+/** "1i" → "1İ", "0a" → "ANA A" (Excel biçimi) */
+export function subeExcel(sk) { return sk ? (sk[0] === '0' ? 'ANA ' : sk[0]) + harf(sk) : ''; }
 function harf(sk) { return sk[1] === 'i' ? 'İ' : sk[1].toUpperCase(); }
 export function subeSira(a, b) { return TUM_SUBELER.indexOf(a) - TUM_SUBELER.indexOf(b); }
 export const subeEposta = sk => `${sk}@${SUBE_ALANI}`;
