@@ -1,0 +1,534 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1d4ed8">
+<meta name="robots" content="noindex,nofollow">
+<title>Veli Bilgi Güncelleme</title>
+<link rel="stylesheet" href="ortak.css">
+<style>
+  /* ---------- Üst bant ---------- */
+  .ust{position:sticky;top:0;z-index:20;background:var(--ana);color:#fff;padding:12px 16px 14px;padding-top:calc(12px + env(safe-area-inset-top))}
+  .ust-ic{max-width:720px;margin:0 auto}
+  .ust-satir{display:flex;align-items:center;gap:12px}
+  .sube-etiket{background:rgba(255,255,255,.18);border-radius:12px;padding:6px 10px;font-weight:800;font-size:20px;letter-spacing:.5px;flex:none}
+  .ust-baslik{flex:1;min-width:0}
+  .ust-baslik b{display:block;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ust-baslik span{font-size:12.5px;opacity:.85}
+  .cikis{background:rgba(255,255,255,.14);border:0;color:#fff;border-radius:10px;width:40px;height:40px;display:grid;place-items:center;flex:none}
+  .cikis svg{width:20px;height:20px}
+  .ilerleme{margin-top:12px}
+  .ilerleme-ust{display:flex;justify-content:space-between;font-size:13px;font-weight:600;margin-bottom:6px;opacity:.95}
+  .cubuk{height:8px;background:rgba(255,255,255,.22);border-radius:8px;overflow:hidden}
+  .cubuk i{display:block;height:100%;background:#fff;border-radius:8px;transition:width .35s}
+
+  /* ---------- Araç çubuğu ---------- */
+  .arac{max-width:720px;margin:0 auto;padding:12px 16px 4px}
+  .ara{position:relative}
+  .ara svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:var(--cok-soluk)}
+  .ara input{padding-left:38px;background:#fff}
+  .cipler{display:flex;gap:8px;overflow-x:auto;padding:10px 0 4px;scrollbar-width:none;margin:0 -16px;padding-left:16px;padding-right:16px}
+  .cipler::-webkit-scrollbar{display:none}
+  .cip{flex:none;border:1.5px solid var(--cizgi);background:#fff;border-radius:999px;padding:6px 12px;font-size:13.5px;font-weight:600;color:var(--soluk)}
+  .cip b{font-weight:800;margin-left:3px}
+  .cip.secili{background:var(--yazi);border-color:var(--yazi);color:#fff}
+
+  /* ---------- Liste ---------- */
+  .liste{max-width:720px;margin:0 auto;padding:6px 16px 130px;display:grid;gap:10px}
+  .ogr{background:var(--kart);border-radius:var(--r);box-shadow:var(--golge);padding:14px 14px 12px;border-left:4px solid transparent;transition:opacity .2s}
+  .ogr.dogru{border-left-color:var(--yesil)}
+  .ogr.duzeltildi{border-left-color:var(--mavi)}
+  .ogr.yeni{border-left-color:var(--mor)}
+  .ogr.ayrildi{border-left-color:var(--kirmizi);opacity:.62}
+  .ogr.ayrildi .ogr-ad{text-decoration:line-through}
+  .ogr-ust{display:flex;align-items:flex-start;gap:10px}
+  .ogr-no{flex:none;background:var(--gri-acik);color:var(--soluk);font-weight:700;font-size:12.5px;border-radius:8px;padding:3px 7px;margin-top:1px;font-variant-numeric:tabular-nums}
+  .ogr-ad{flex:1;font-weight:700;font-size:16px;line-height:1.3}
+  .ogr-bilgi{margin:8px 0 0 0;display:grid;gap:4px;font-size:14.5px}
+  .ogr-bilgi .satir{display:flex;align-items:center;gap:8px;color:var(--soluk)}
+  .ogr-bilgi .satir svg{width:16px;height:16px;flex:none;color:var(--cok-soluk)}
+  .ogr-bilgi .satir .deger{color:var(--yazi)}
+  .ogr-bilgi a.tel{color:var(--ana);font-weight:700;text-decoration:none;font-variant-numeric:tabular-nums}
+  .eksik{color:var(--sari)!important;font-weight:600}
+  .eski{display:block;font-size:12.5px;color:var(--cok-soluk);text-decoration:line-through}
+  .ogr-islem{display:flex;gap:8px;margin-top:12px}
+  .ogr-islem .btn{flex:1;min-height:40px;font-size:14px;padding:6px 8px}
+  .ogr-islem .btn.onay{border-color:#bfe5cb;color:var(--yesil);background:var(--yesil-acik)}
+  .ogr-islem .btn.onay.aktif{background:var(--yesil);color:#fff;border-color:var(--yesil)}
+  .ogr-islem .btn.ayril{color:var(--kirmizi);border-color:#f3c9c9}
+  .bos{text-align:center;color:var(--soluk);padding:40px 10px}
+
+  /* ---------- Alt çubuk ---------- */
+  .alt{position:fixed;left:0;right:0;bottom:0;background:rgba(255,255,255,.96);backdrop-filter:blur(8px);border-top:1px solid var(--cizgi);padding:10px 16px calc(10px + env(safe-area-inset-bottom));z-index:20}
+  .alt-ic{max-width:720px;margin:0 auto;display:flex;gap:10px}
+  .alt-ic .btn{flex:1;min-height:48px;font-size:15px}
+
+  .ipucu{background:var(--ana-acik);color:var(--ana-koyu);border-radius:12px;padding:12px 14px;font-size:13.5px;position:relative;padding-right:38px}
+  .ipucu b{display:block;margin-bottom:3px;font-size:14px}
+  .ipucu button{position:absolute;right:6px;top:6px;border:0;background:transparent;color:inherit;font-size:20px;width:30px;height:30px}
+  .serit{border-radius:12px;padding:12px 14px;font-size:14px;font-weight:600}
+  .serit.tamam{background:var(--yesil-acik);color:var(--yesil)}
+  .serit.kilit{background:var(--kirmizi-acik);color:var(--kirmizi)}
+
+  /* Şube seçimi */
+  .sube-izgara{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:16px}
+  .sube-izgara button{border:1.5px solid var(--cizgi);background:#fff;border-radius:9px;padding:9px 0;font-weight:700;font-size:14px}
+  .sube-izgara button.secili{background:var(--ana);border-color:var(--ana);color:#fff}
+  .secili-sube{display:flex;align-items:center;justify-content:space-between;background:var(--ana-acik);border-radius:12px;padding:12px 14px;margin-bottom:16px}
+  .secili-sube b{font-size:22px;color:var(--ana-koyu)}
+  .secili-sube button{border:0;background:transparent;color:var(--ana);font-weight:600;font-size:13.5px}
+  .sifre-girdi{font-size:24px!important;letter-spacing:8px;text-align:center;font-variant-numeric:tabular-nums}
+
+  .ozet-tablo{width:100%;border-collapse:collapse;margin:6px 0 14px;font-size:14px}
+  .ozet-tablo td{padding:7px 2px;border-bottom:1px solid var(--cizgi)}
+  .ozet-tablo td:last-child{text-align:right;font-weight:700}
+</style>
+</head>
+<body>
+
+<!-- ============ YÜKLENİYOR ============ -->
+<div id="ekranYukle" class="yukleniyor"><div><div class="donen"></div>Yükleniyor…</div></div>
+
+<!-- ============ GİRİŞ ============ -->
+<div id="ekranGiris" class="giris-sayfa gizli">
+  <form class="giris-kart" id="girisForm" autocomplete="on">
+    <div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+    <h1>Veli Bilgi Güncelleme</h1>
+    <p class="aciklama" id="okulAdiGiris"></p>
+
+    <div id="seciliSubeKutu" class="secili-sube gizli">
+      <div><small style="color:var(--soluk);font-weight:600">Şube</small><br><b id="seciliSubeAd"></b></div>
+      <button type="button" id="subeDegistir">Değiştir</button>
+    </div>
+    <div id="subeSecKutu" class="gizli">
+      <div class="alan"><span>Şubenizi seçin</span></div>
+      <div class="sube-izgara" id="subeIzgara"></div>
+    </div>
+
+    <input type="text" name="username" id="kullaniciAdi" autocomplete="username" class="gizli" tabindex="-1" aria-hidden="true">
+    <label class="alan">
+      <span>Şube şifresi</span>
+      <input id="sifre" class="sifre-girdi" type="password" inputmode="numeric" autocomplete="current-password" placeholder="••••••" required>
+    </label>
+    <div id="girisHata" class="hata-kutu gizli"></div>
+    <button class="btn ana genis" id="girisBtn" type="submit" style="min-height:50px;font-size:16px">Giriş Yap</button>
+    <p style="font-size:12.5px;color:var(--cok-soluk);margin:16px 0 0;text-align:center">Şifrenizi okul idaresinden alabilirsiniz.</p>
+  </form>
+</div>
+
+<!-- ============ ANA EKRAN ============ -->
+<div id="ekranAna" class="gizli">
+  <header class="ust">
+    <div class="ust-ic">
+      <div class="ust-satir">
+        <div class="sube-etiket" id="ustSube"></div>
+        <div class="ust-baslik"><b id="ustOgretmen"></b><span id="ustOkul"></span></div>
+        <button class="cikis" id="cikisBtn" title="Çıkış yap" aria-label="Çıkış yap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>
+      </div>
+      <div class="ilerleme">
+        <div class="ilerleme-ust"><span id="ilerlemeYazi"></span><span id="sonTarihYazi"></span></div>
+        <div class="cubuk"><i id="ilerlemeCubuk" style="width:0"></i></div>
+      </div>
+    </div>
+  </header>
+
+  <div class="arac">
+    <div id="seritler" style="display:grid;gap:10px;margin-bottom:10px"></div>
+    <div class="ara">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input id="ara" class="girdi" type="search" placeholder="Öğrenci, veli ya da numara ara">
+    </div>
+    <div class="cipler" id="cipler"></div>
+  </div>
+
+  <main class="liste" id="liste"></main>
+
+  <div class="alt" id="altCubuk">
+    <div class="alt-ic">
+      <button class="btn" id="yeniBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Yeni öğrenci</button>
+      <button class="btn ana" id="tamamlaBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Listemi tamamladım</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ DÜZENLE / YENİ ============ -->
+<div class="perde" id="perdeDuzen">
+  <form class="panel" id="duzenForm" novalidate>
+    <div class="tutamak"></div>
+    <h3 id="duzenBaslik">Bilgileri düzelt</h3>
+    <p class="alt-baslik" id="duzenAlt"></p>
+    <label class="alan" id="alanNo"><span>Okul numarası</span><input id="fNo" inputmode="numeric" autocomplete="off"><small></small></label>
+    <label class="alan" id="alanAd"><span>Öğrenci adı soyadı</span><input id="fAd" autocomplete="off" autocapitalize="words"><small></small></label>
+    <label class="alan" id="alanVeli"><span>Veli adı soyadı</span><input id="fVeli" autocomplete="off" autocapitalize="words"><small></small></label>
+    <label class="alan" id="alanTel"><span>Veli telefonu</span><input id="fTel" type="tel" inputmode="tel" placeholder="5XX XXX XX XX" autocomplete="off"><small>Başında 0 olmadan 10 hane (5 ile başlar)</small></label>
+    <div class="dugmeler">
+      <button type="button" class="btn" data-kapat>Vazgeç</button>
+      <button type="submit" class="btn ana" id="duzenKaydet">Kaydet</button>
+    </div>
+    <button type="button" class="btn hayalet genis gizli" id="yeniSilBtn" style="color:var(--kirmizi);margin-top:8px">Bu kaydı sil</button>
+  </form>
+</div>
+
+<!-- ============ AYRILDI ONAYI ============ -->
+<div class="perde" id="perdeAyril">
+  <div class="panel">
+    <div class="tutamak"></div>
+    <h3>Öğrenci sınıftan ayrıldı mı?</h3>
+    <p class="alt-baslik" id="ayrilAd"></p>
+    <p style="font-size:14px;color:var(--soluk);margin:0 0 16px">Nakil giden, başka şubeye geçen ya da kaydı silinen öğrenciler için işaretleyin. Kayıt silinmez; yönetici “ayrılanlar” listesinde görür. İsterseniz sonra geri alabilirsiniz.</p>
+    <div class="dugmeler">
+      <button class="btn" data-kapat>Vazgeç</button>
+      <button class="btn kirmizi" id="ayrilOnay">Evet, ayrıldı</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ TAMAMLA ONAYI ============ -->
+<div class="perde" id="perdeTamam">
+  <div class="panel">
+    <div class="tutamak"></div>
+    <h3>Listeyi tamamla</h3>
+    <p class="alt-baslik">Şubenizin özeti:</p>
+    <table class="ozet-tablo" id="tamamOzet"></table>
+    <div class="dugmeler">
+      <button class="btn" data-kapat>Geri dön</button>
+      <button class="btn yesil" id="tamamOnay">Onayla ve gönder</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { auth, db, OKUL_ADI, SUBE_ALANI, TUM_SUBELER, subeAnahtari, subeAdi, subeEposta,
+  baslikYap, telTemizle, telGecerli, telGoster, noTemizle, esc, aramaMetni, DURUM, durumHesapla,
+  hataMesaji, tost } from './ortak.js';
+import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import { collection, doc, getDoc, getDocs, query, where, updateDoc, addDoc, deleteDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+const $ = id => document.getElementById(id);
+const IKON = {
+  kisi: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+  tel: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>',
+  onay: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
+  kalem: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>',
+  carpi: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+  geri: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>',
+};
+
+// ---------- Durum ----------
+let sk = null;           // giriş yapılan şube anahtarı
+let hedefSk = subeAnahtari(new URLSearchParams(location.search).get('s'));
+let sube = {};           // subeler/{sk}
+let ayar = {};           // genel/ayar
+let ogrenciler = [];
+let filtre = 'tumu';
+let arama = '';
+let aktif = null;        // düzenlenen öğrenci (null = yeni)
+
+const goster = id => ['ekranYukle','ekranGiris','ekranAna'].forEach(e => $(e).classList.toggle('gizli', e !== id));
+$('okulAdiGiris').textContent = OKUL_ADI;
+
+// ---------- Giriş ----------
+function girisHazirla() {
+  $('girisHata').classList.add('gizli');
+  $('sifre').value = '';
+  if (hedefSk) {
+    $('seciliSubeKutu').classList.remove('gizli');
+    $('subeSecKutu').classList.add('gizli');
+    $('seciliSubeAd').textContent = subeAdi(hedefSk) + ' Şubesi';
+    $('kullaniciAdi').value = subeEposta(hedefSk);
+  } else {
+    $('seciliSubeKutu').classList.add('gizli');
+    $('subeSecKutu').classList.remove('gizli');
+    $('subeIzgara').innerHTML = TUM_SUBELER.map(s => `<button type="button" data-s="${s}">${subeAdi(s)}</button>`).join('');
+  }
+  goster('ekranGiris');
+}
+$('subeIzgara').addEventListener('click', e => {
+  const b = e.target.closest('button[data-s]'); if (!b) return;
+  hedefSk = b.dataset.s;
+  history.replaceState(null, '', '?s=' + hedefSk);
+  girisHazirla();
+  $('sifre').focus();
+});
+$('subeDegistir').onclick = () => { hedefSk = null; history.replaceState(null, '', location.pathname); girisHazirla(); };
+
+$('girisForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  if (!hedefSk) { girisHatasi('Önce şubenizi seçin.'); return; }
+  const sifre = $('sifre').value.trim();
+  if (!sifre) { girisHatasi('Şifrenizi yazın.'); return; }
+  $('girisBtn').disabled = true; $('girisBtn').textContent = 'Giriş yapılıyor…';
+  try {
+    await signInWithEmailAndPassword(auth, subeEposta(hedefSk), sifre);
+  } catch (err) {
+    girisHatasi(hataMesaji(err));
+  } finally {
+    $('girisBtn').disabled = false; $('girisBtn').textContent = 'Giriş Yap';
+  }
+});
+function girisHatasi(m) { $('girisHata').textContent = m; $('girisHata').classList.remove('gizli'); }
+
+$('cikisBtn').onclick = async () => { await signOut(auth); };
+
+onAuthStateChanged(auth, async user => {
+  const m = user?.email?.match(new RegExp('^([1-4][a-m])@' + SUBE_ALANI.replace(/\./g, '\\.') + '$'));
+  if (!m) { if (user) await signOut(auth); girisHazirla(); return; }
+  if (hedefSk && hedefSk !== m[1]) { await signOut(auth); return; }   // başka şubenin linki açıldı
+  sk = m[1]; hedefSk = sk;
+  if (new URLSearchParams(location.search).get('s') !== sk) history.replaceState(null, '', '?s=' + sk);
+  goster('ekranYukle');
+  try { await yukle(); goster('ekranAna'); }
+  catch (err) { tost(hataMesaji(err), 'hata'); await signOut(auth); }
+});
+
+async function yukle() {
+  const [sSnap, aSnap, oSnap] = await Promise.all([
+    getDoc(doc(db, 'subeler', sk)),
+    getDoc(doc(db, 'genel', 'ayar')).catch(() => null),
+    getDocs(query(collection(db, 'ogrenciler'), where('sk', '==', sk))),
+  ]);
+  sube = sSnap.exists() ? sSnap.data() : {};
+  ayar = aSnap?.exists() ? aSnap.data() : {};
+  ogrenciler = oSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+  $('ustSube').textContent = subeAdi(sk);
+  $('ustOgretmen').textContent = sube.ogretmen || (subeAdi(sk) + ' Şubesi');
+  $('ustOkul').textContent = OKUL_ADI;
+  ciz();
+}
+
+// ---------- Çizim ----------
+const sirala = (a, b) => (a.ad || '').localeCompare(b.ad || '', 'tr');
+function sayilar() {
+  const c = { tumu: 0, bekliyor: 0, degisen: 0, ayrildi: 0, yeni: 0, dogru: 0, eksik: 0 };
+  for (const o of ogrenciler) {
+    c.tumu++;
+    if (o.durum === 'bekliyor') c.bekliyor++;
+    if (o.durum === 'duzeltildi') c.degisen++;
+    if (o.durum === 'ayrildi') c.ayrildi++;
+    if (o.durum === 'yeni') c.yeni++;
+    if (o.durum === 'dogru') c.dogru++;
+    if (o.durum !== 'ayrildi' && (!o.tel || !o.veli)) c.eksik++;
+  }
+  return c;
+}
+function ciz() {
+  const c = sayilar();
+  const mevcut = ogrenciler.filter(o => o.durum !== 'yeni').length;
+  const kontrol = mevcut - c.bekliyor;
+  const yuzde = mevcut ? Math.round(kontrol / mevcut * 100) : 100;
+  $('ilerlemeYazi').textContent = `${kontrol} / ${mevcut} öğrenci kontrol edildi`;
+  $('ilerlemeCubuk').style.width = yuzde + '%';
+  $('sonTarihYazi').textContent = ayar.sonTarih ? 'Son gün: ' + new Date(ayar.sonTarih + 'T00:00').toLocaleDateString('tr-TR', { day: 'numeric', month: 'long' }) : '';
+
+  // şeritler
+  const kilitli = !!sube.kilitli;
+  let s = '';
+  if (kilitli) s += `<div class="serit kilit">🔒 Bu şube yönetici tarafından düzenlemeye kapatıldı. Değişiklik için idareyle görüşün.</div>`;
+  else if (sube.tamamlandi) s += `<div class="serit tamam">✓ Listenizi tamamlayıp gönderdiniz. Teşekkürler! Gerekirse düzenlemeye devam edebilirsiniz.</div>`;
+  let ipucuGizli = false; try { ipucuGizli = localStorage.getItem('ipucu-gizle') === '1'; } catch {}
+  if (!kilitli && !sube.tamamlandi && !ipucuGizli) s += `<div class="ipucu"><b>Nasıl yapılır?</b>Bilgisi doğru olan öğrenci için <b style="display:inline">✓ Doğru</b>’ya, yanlışsa <b style="display:inline">Düzelt</b>’e basın. Ayrılanları işaretleyin, yeni gelenleri alttan ekleyin. Telefon numarasına dokunarak veliyi arayabilirsiniz.<button aria-label="Kapat" id="ipucuKapat">×</button></div>`;
+  $('seritler').innerHTML = s;
+  $('ipucuKapat')?.addEventListener('click', () => { try { localStorage.setItem('ipucu-gizle', '1'); } catch {} ciz(); });
+  $('altCubuk').classList.toggle('gizli', kilitli);
+
+  // çipler
+  const cipler = [['tumu','Tümü',c.tumu],['bekliyor','Kontrol bekleyen',c.bekliyor],['degisen','Düzeltilen',c.degisen],['ayrildi','Ayrılan',c.ayrildi],['yeni','Yeni gelen',c.yeni],['eksik','Eksik bilgi',c.eksik]];
+  $('cipler').innerHTML = cipler.filter(([k,,n]) => k === 'tumu' || k === 'bekliyor' || n > 0)
+    .map(([k, ad, n]) => `<button class="cip ${filtre === k ? 'secili' : ''}" data-f="${k}">${ad}<b>${n}</b></button>`).join('');
+
+  // tamamla düğmesi
+  $('tamamlaBtn').disabled = c.bekliyor > 0;
+  $('tamamlaBtn').innerHTML = c.bekliyor > 0
+    ? `${c.bekliyor} öğrenci kaldı`
+    : (sube.tamamlandi ? IKON.onay + 'Tamamlandı' : IKON.onay + 'Listemi tamamladım');
+
+  // liste
+  const q = aramaMetni(arama);
+  let l = ogrenciler.filter(o => {
+    if (filtre === 'bekliyor' && o.durum !== 'bekliyor') return false;
+    if (filtre === 'degisen' && o.durum !== 'duzeltildi') return false;
+    if (filtre === 'ayrildi' && o.durum !== 'ayrildi') return false;
+    if (filtre === 'yeni' && o.durum !== 'yeni') return false;
+    if (filtre === 'eksik' && !(o.durum !== 'ayrildi' && (!o.tel || !o.veli))) return false;
+    if (q && !aramaMetni(`${o.ad} ${o.veli} ${o.no} ${o.tel}`).includes(q)) return false;
+    return true;
+  });
+  // ayrılanlar sonda
+  l.sort((a, b) => (a.durum === 'ayrildi') - (b.durum === 'ayrildi') || sirala(a, b));
+  $('liste').innerHTML = l.length ? l.map(o => kart(o, kilitli)).join('')
+    : `<div class="bos">${filtre === 'bekliyor' && !q ? '🎉 Kontrol bekleyen öğrenci kalmadı.' : 'Bu listede öğrenci yok.'}</div>`;
+}
+
+function kart(o, kilitli) {
+  const d = DURUM[o.durum] || DURUM.bekliyor;
+  const eskiGoster = (a) => (o.orj && (o.orj[a] || '') !== (o[a] || '')) ? `<span class="eski">${esc(a === 'tel' ? telGoster(o.orj[a]) : o.orj[a]) || '(boş)'}</span>` : '';
+  const veli = o.veli ? `<span class="deger">${esc(o.veli)}</span>` : `<span class="eksik">Veli adı yok</span>`;
+  const tel = o.tel ? `<a class="tel" href="tel:0${esc(o.tel)}">${telGoster(o.tel)}</a>` : `<span class="eksik">Telefon yok</span>`;
+  let islem = '';
+  if (!kilitli) {
+    if (o.durum === 'ayrildi') islem = `<button class="btn" data-i="geri">${IKON.geri}Geri al</button>`;
+    else if (o.durum === 'yeni') islem = `<button class="btn" data-i="duzelt">${IKON.kalem}Düzenle</button>`;
+    else islem = `<button class="btn onay ${o.durum === 'dogru' || o.durum === 'duzeltildi' ? 'aktif' : ''}" data-i="dogru">${IKON.onay}${o.durum === 'duzeltildi' ? 'Düzeltildi' : 'Doğru'}</button>
+                  <button class="btn" data-i="duzelt">${IKON.kalem}Düzelt</button>
+                  <button class="btn ayril" data-i="ayril">${IKON.carpi}Ayrıldı</button>`;
+  }
+  return `<article class="ogr ${o.durum}" data-id="${o.id}">
+    <div class="ogr-ust"><span class="ogr-no">${esc(o.no) || '—'}</span><div class="ogr-ad">${esc(o.ad)}${eskiGoster('ad')}</div><span class="rozet ${d.renk}">${d.kisa}</span></div>
+    <div class="ogr-bilgi">
+      <div class="satir">${IKON.kisi}<div>${veli}${eskiGoster('veli')}</div></div>
+      <div class="satir">${IKON.tel}<div>${tel}${eskiGoster('tel')}</div></div>
+      ${o.orj && (o.orj.no || '') !== (o.no || '') ? `<div class="satir" style="font-size:12.5px">Eski okul no: <s>${esc(o.orj.no)}</s></div>` : ''}
+    </div>
+    ${islem ? `<div class="ogr-islem">${islem}</div>` : ''}
+  </article>`;
+}
+
+$('cipler').addEventListener('click', e => { const b = e.target.closest('[data-f]'); if (b) { filtre = b.dataset.f; ciz(); } });
+let araZaman; $('ara').addEventListener('input', e => { clearTimeout(araZaman); araZaman = setTimeout(() => { arama = e.target.value; ciz(); }, 150); });
+
+$('liste').addEventListener('click', e => {
+  const b = e.target.closest('[data-i]'); if (!b) return;
+  const o = ogrenciler.find(x => x.id === b.closest('[data-id]').dataset.id); if (!o) return;
+  const i = b.dataset.i;
+  if (i === 'dogru') {
+    if (o.durum === 'duzeltildi') return duzenAc(o);
+    if (o.durum === 'dogru') return guncelle(o, { durum: 'bekliyor' }, 'Onay geri alındı');
+    if (!o.tel || !o.veli) { duzenAc(o, 'Eksik bilgileri tamamlayın. Bilgi gerçekten yoksa boş bırakıp kaydedebilirsiniz.'); return; }
+    return guncelle(o, { durum: durumHesapla(o, o) }, null);
+  }
+  if (i === 'duzelt') return duzenAc(o);
+  if (i === 'ayril') { aktif = o; $('ayrilAd').textContent = `${o.ad} · No: ${o.no}`; ac('perdeAyril'); return; }
+  if (i === 'geri') return guncelle(o, { durum: o.oncekiDurum && o.oncekiDurum !== 'ayrildi' ? o.oncekiDurum : 'bekliyor', oncekiDurum: null }, 'Geri alındı');
+});
+
+// ---------- Kaydetme ----------
+async function guncelle(o, degisim, mesaj, islem) {
+  if (sube.kilitli) return;
+  const eski = { ...o };
+  Object.assign(o, degisim);
+  ciz();
+  try {
+    await updateDoc(doc(db, 'ogrenciler', o.id), { ...degisim, guncel: serverTimestamp() });
+    if (mesaj) tost(mesaj, 'tamam');
+    kayit(islem || degisim.durum, o, eski);
+  } catch (err) {
+    Object.keys(o).forEach(k => delete o[k]); Object.assign(o, eski); ciz();
+    tost(hataMesaji(err), 'hata');
+  }
+}
+function kayit(islem, o, eski) {
+  const ozet = eski ? ['no','ad','veli','tel'].filter(a => (eski[a] || '') !== (o[a] || '')).map(a => `${a}: ${eski[a] || '—'} → ${o[a] || '—'}`).join(' | ') : '';
+  addDoc(collection(db, 'kayitlar'), { sk, ogrId: o.id, ad: o.ad || '', islem, ozet, kim: 'ogretmen', zaman: serverTimestamp() }).catch(() => {});
+}
+
+// ---------- Paneller ----------
+function ac(id) { $(id).classList.add('acik'); }
+function kapat(id) { $(id).classList.remove('acik'); }
+document.querySelectorAll('.perde').forEach(p => {
+  p.addEventListener('click', e => { if (e.target === p || e.target.closest('[data-kapat]')) kapat(p.id); });
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.perde.acik').forEach(p => kapat(p.id)); });
+
+$('ayrilOnay').onclick = () => {
+  kapat('perdeAyril');
+  const o = aktif;
+  guncelle(o, { durum: 'ayrildi', oncekiDurum: o.durum }, `${o.ad} ayrıldı olarak işaretlendi`);
+};
+
+function alanHata(id, m) {
+  const el = $(id); el.classList.toggle('hata', !!m);
+  const sm = el.querySelector('small');
+  if (id === 'alanTel') sm.textContent = m || 'Başında 0 olmadan 10 hane (5 ile başlar)';
+  else sm.textContent = m || '';
+}
+function duzenAc(o, not) {
+  aktif = o;
+  ['alanNo','alanAd','alanVeli','alanTel'].forEach(a => alanHata(a, ''));
+  $('duzenBaslik').textContent = o ? 'Bilgileri düzelt' : 'Yeni öğrenci ekle';
+  $('duzenAlt').textContent = not || (o ? (o.durum === 'yeni' ? 'Sonradan eklenen kayıt' : 'Değiştirdiğiniz bilgiler yöneticiye “düzeltildi” olarak iletilir.') : 'Sınıfınıza yeni gelen öğrenciyi ekleyin.');
+  $('duzenAlt').style.color = not ? 'var(--sari)' : '';
+  $('fNo').value = o?.no || '';
+  $('fAd').value = o?.ad || '';
+  $('fVeli').value = o?.veli || '';
+  $('fTel').value = o?.tel || '';
+  $('yeniSilBtn').classList.toggle('gizli', !(o && o.durum === 'yeni'));
+  ac('perdeDuzen');
+  setTimeout(() => $(o ? (not ? (!o.veli ? 'fVeli' : 'fTel') : 'fTel') : 'fNo').focus(), 250);
+}
+$('yeniBtn').onclick = () => duzenAc(null);
+$('fTel').addEventListener('blur', () => { const t = telTemizle($('fTel').value); if (t) $('fTel').value = t; });
+
+let bosOnay = false;
+$('duzenForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const v = {
+    no: noTemizle($('fNo').value),
+    ad: baslikYap($('fAd').value),
+    veli: baslikYap($('fVeli').value),
+    tel: telTemizle($('fTel').value),
+  };
+  let hata = false;
+  ['alanNo','alanAd','alanVeli','alanTel'].forEach(a => alanHata(a, ''));
+  if (!v.no) { alanHata('alanNo', 'Okul numarası gerekli'); hata = true; }
+  else if (ogrenciler.some(x => x !== aktif && x.no === v.no && x.durum !== 'ayrildi')) { alanHata('alanNo', 'Bu numara sınıfta başka bir öğrencide kayıtlı'); hata = true; }
+  if (v.ad.length < 3) { alanHata('alanAd', 'Ad soyad gerekli'); hata = true; }
+  if (v.tel && !telGecerli(v.tel)) { alanHata('alanTel', 'Geçersiz numara: 5 ile başlayan 10 hane olmalı'); hata = true; }
+  if (hata) return;
+  if ((!v.tel || !v.veli) && !bosOnay) {
+    bosOnay = true;
+    $('duzenAlt').textContent = (!v.tel ? 'Telefon' : 'Veli adı') + ' boş kalacak. Bilgi gerçekten yoksa tekrar Kaydet’e basın.';
+    $('duzenAlt').style.color = 'var(--sari)';
+    return;
+  }
+  bosOnay = false;
+  kapat('perdeDuzen');
+  if (aktif) {
+    const durum = durumHesapla(aktif, v);
+    guncelle(aktif, { ...v, durum }, durum === 'duzeltildi' ? 'Düzeltme kaydedildi' : 'Kaydedildi', durum === 'yeni' ? 'yeni-duzenle' : durum);
+  } else {
+    const yeni = { sk, ...v, durum: 'yeni', orj: null };
+    try {
+      const ref = await addDoc(collection(db, 'ogrenciler'), { ...yeni, guncel: serverTimestamp() });
+      const o = { id: ref.id, ...yeni };
+      ogrenciler.push(o);
+      filtre = 'tumu'; ciz();
+      tost(`${v.ad} eklendi`, 'tamam');
+      kayit('yeni', o, null);
+    } catch (err) { tost(hataMesaji(err), 'hata'); }
+  }
+});
+['fNo','fAd','fVeli','fTel'].forEach(id => $(id).addEventListener('input', () => { bosOnay = false; }));
+
+$('yeniSilBtn').onclick = async () => {
+  const o = aktif; if (!o || o.durum !== 'yeni') return;
+  kapat('perdeDuzen');
+  try {
+    await deleteDoc(doc(db, 'ogrenciler', o.id));
+    ogrenciler = ogrenciler.filter(x => x !== o); ciz();
+    tost('Kayıt silindi');
+    kayit('yeni-sil', o, null);
+  } catch (err) { tost(hataMesaji(err), 'hata'); }
+};
+
+// ---------- Tamamla ----------
+$('tamamlaBtn').onclick = () => {
+  const c = sayilar();
+  $('tamamOzet').innerHTML = [
+    ['✓ Bilgisi doğru', c.dogru], ['✎ Düzeltilen', c.degisen], ['✗ Ayrılan', c.ayrildi], ['＋ Yeni gelen', c.yeni],
+    ['Güncel mevcut', c.tumu - c.ayrildi], ...(c.eksik ? [['⚠ Eksik bilgisi olan', c.eksik]] : [])
+  ].map(([a, n]) => `<tr><td>${a}</td><td>${n}</td></tr>`).join('');
+  ac('perdeTamam');
+};
+$('tamamOnay').onclick = async () => {
+  kapat('perdeTamam');
+  try {
+    await updateDoc(doc(db, 'subeler', sk), { tamamlandi: true, tamamTarih: serverTimestamp() });
+    sube.tamamlandi = true; ciz();
+    tost('Listeniz yöneticiye iletildi. Teşekkürler!', 'tamam');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } catch (err) { tost(hataMesaji(err), 'hata'); }
+};
+</script>
+</body>
+</html>
