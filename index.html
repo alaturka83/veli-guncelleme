@@ -8,9 +8,9 @@
 <title>Veli Bilgi Güncelleme</title>
 <script>
 // Sürüm kontrolü: GitHub'a yeni dosya yüklenince tarayıcı önbelleğini atlayıp yeni sürümü açar.
-(function(){var V='24';var u=new URL(location.href);fetch('surum.txt?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.text():''}).then(function(t){t=(t||'').trim();if(!t)return;if(t===V){if(u.searchParams.has('yv')){u.searchParams.delete('yv');u.searchParams.delete('r');history.replaceState(null,'',u.pathname+u.search+u.hash)}return}var once=Number(u.searchParams.get('r')||0);if(u.searchParams.get('yv')===t&&Date.now()-once<60000)return;u.searchParams.set('yv',t);u.searchParams.set('r',Date.now());location.replace(u.href)}).catch(function(){})})();
+(function(){var V='25';var u=new URL(location.href);fetch('surum.txt?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.text():''}).then(function(t){t=(t||'').trim();if(!t)return;if(t===V){if(u.searchParams.has('yv')){u.searchParams.delete('yv');u.searchParams.delete('r');history.replaceState(null,'',u.pathname+u.search+u.hash)}return}var once=Number(u.searchParams.get('r')||0);if(u.searchParams.get('yv')===t&&Date.now()-once<60000)return;u.searchParams.set('yv',t);u.searchParams.set('r',Date.now());location.replace(u.href)}).catch(function(){})})();
 </script>
-<link rel="stylesheet" href="ortak.css?v=24">
+<link rel="stylesheet" href="ortak.css?v=25">
 <style>
   /* ---------- Üst bant ---------- */
   .ust{position:sticky;top:0;z-index:20;background:var(--ana);color:#fff;padding:12px 16px 14px;padding-top:calc(12px + env(safe-area-inset-top))}
@@ -197,12 +197,12 @@
     <div class="tutamak"></div>
     <h3 id="duzenBaslik">Bilgileri düzelt</h3>
     <p class="alt-baslik" id="duzenAlt"></p>
-    <label class="alan" id="alanNo"><span>Okul numarası <small style="display:inline;font-weight:500;color:var(--cok-soluk)">(biliniyorsa)</small></span><input id="fNo" inputmode="numeric" autocomplete="off"><small></small></label>
-    <label class="alan" id="alanAd"><span>Öğrenci adı soyadı</span><input id="fAd" autocomplete="off" autocapitalize="words"><small></small></label>
-    <label class="alan" id="alanVeli"><span>Veli adı soyadı</span><input id="fVeli" autocomplete="off" autocapitalize="words"><small></small></label>
-    <label class="alan" id="alanTel"><span>Veli telefonu</span><input id="fTel" type="tel" inputmode="tel" placeholder="5XX XXX XX XX" autocomplete="off"><small>Başında 0 olmadan 10 hane (5 ile başlar)</small></label>
-    <label class="devamsiz-kutu"><input type="checkbox" id="fDevamsiz"><span><b>Sürekli devamsız</b><small>Okula düzenli gelmeyen ya da ailesine ulaşılamayan öğrenci</small></span></label>
-    <label class="alan gizli" id="alanDevNot"><span>Devamsızlık açıklaması <small style="display:inline;font-weight:500;color:var(--cok-soluk)">(isteğe bağlı)</small></span><input id="fDevNot" maxlength="120" placeholder="ör. yurt dışında, adres değişti, ulaşılamıyor" autocomplete="off"><small></small></label>
+    <label class="alan" id="alanNo"><span>Okul Numarası <small style="display:inline;font-weight:500;color:var(--cok-soluk)">(biliniyorsa)</small></span><input id="fNo" inputmode="numeric" autocomplete="off"><small></small></label>
+    <label class="alan" id="alanAd"><span>Öğrenci Adı Soyadı</span><input id="fAd" autocomplete="off" autocapitalize="words"><small></small></label>
+    <label class="alan" id="alanVeli"><span>Veli Adı Soyadı</span><input id="fVeli" autocomplete="off" autocapitalize="words"><small></small></label>
+    <label class="alan" id="alanTel"><span>Veli Telefonu</span><input id="fTel" maxlength="10" type="tel" inputmode="tel" placeholder="5XX XXX XX XX" autocomplete="off"><small>Başında 0 olmadan 10 hane (5 ile başlar)</small></label>
+    <label class="devamsiz-kutu"><input type="checkbox" id="fDevamsiz"><span><b>Sürekli Devamsız</b><small>Okula düzenli gelmeyen ya da ailesine ulaşılamayan öğrenci</small></span></label>
+    <label class="alan gizli" id="alanDevNot"><span>Devamsızlık Açıklaması <small style="display:inline;font-weight:500;color:var(--cok-soluk)">(isteğe bağlı)</small></span><input id="fDevNot" maxlength="120" placeholder="ör. yurt dışında, adres değişti, ulaşılamıyor" autocomplete="off"><small></small></label>
     <div class="dugmeler">
       <button type="button" class="btn" data-kapat>Vazgeç</button>
       <button type="submit" class="btn ana" id="duzenKaydet">Kaydet</button>
@@ -254,8 +254,8 @@
 <script type="module">
 import { baglan, OZEL_ADLAR, ozelMi, subeExcel, OKUL_ADI, SUBE_ALANI, TUM_SUBELER, subeAnahtari, subeAdi, subeEposta,
   baslikYap, telTemizle, telGecerli, telGoster, noTemizle, esc, aramaMetni, DURUM, durumHesapla,
-  hataMesaji, tost } from './ortak.js?v=24';
-import { yeniKitap, subeSayfalari, excelKaydet, bugun } from './excel.js?v=24';
+  hataMesaji, tost } from './ortak.js?v=25';
+import { yeniKitap, subeSayfalari, excelKaydet, bugun } from './excel.js?v=25';
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { collection, doc, getDoc, getDocs, query, where, updateDoc, addDoc, setDoc, deleteDoc, serverTimestamp, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
@@ -680,6 +680,14 @@ function duzenAc(o, not, devamsizAc) {
 }
 $('yeniBtn').onclick = () => duzenAc(null);
 $('fDevamsiz').addEventListener('change', () => { $('alanDevNot').classList.toggle('gizli', !$('fDevamsiz').checked); if ($('fDevamsiz').checked) setTimeout(() => $('fDevNot').focus(), 50); });
+// Telefon alanı: yalnızca rakam, en fazla 10 hane (başa yazılan 0 ya da 90 atılır)
+$('fTel').addEventListener('input', () => {
+  const el = $('fTel');
+  let t = el.value.replace(/\D/g, '');
+  if (t.length > 10 && t.startsWith('90')) t = t.slice(2);
+  t = t.replace(/^0+/, '').slice(0, 10);
+  if (el.value !== t) el.value = t;
+});
 $('fTel').addEventListener('blur', () => { const t = telTemizle($('fTel').value); if (t) $('fTel').value = t; });
 
 let bosOnay = false;

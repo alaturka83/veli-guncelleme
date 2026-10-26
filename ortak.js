@@ -1,5 +1,5 @@
 // Ortak yardımcılar — öğretmen ve yönetici ekranları birlikte kullanır.
-import { firebaseConfig, OKUL_ADI, SUBE_ALANI } from './config.js?v=24';
+import { firebaseConfig, OKUL_ADI, SUBE_ALANI } from './config.js?v=25';
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getAuth } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { getFirestore } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
