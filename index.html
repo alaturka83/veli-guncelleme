@@ -257,7 +257,7 @@ import { baglan, OZEL_ADLAR, ozelMi, subeExcel, OKUL_ADI, SUBE_ALANI, TUM_SUBELE
   hataMesaji, tost } from './ortak.js?v=24';
 import { yeniKitap, subeSayfalari, excelKaydet, bugun } from './excel.js?v=24';
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import { collection, doc, getDoc, getDocs, query, where, updateDoc, addDoc, deleteDoc, serverTimestamp, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { collection, doc, getDoc, getDocs, query, where, updateDoc, addDoc, setDoc, deleteDoc, serverTimestamp, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 const $ = id => document.getElementById(id);
 const IKON = {
@@ -433,7 +433,7 @@ function ciz() {
   $('ustOgretmen').textContent = sube.ogretmen || (subeAdi(sk) + ' Şubesi');
   $('ustOkul').textContent = OKUL_ADI;
   const c = sayilar();
-  const mevcut = ogrenciler.filter(o => o.durum !== 'ayrildi').length;   // yeni gelenler dahil, ayrılanlar hariç
+  const mevcut = ogrenciler.filter(o => o.durum !== 'yeni' && o.durum !== 'ayrildi').length;
   const kontrol = mevcut - c.bekliyor;
   const yuzde = mevcut ? Math.round(kontrol / mevcut * 100) : 100;
   $('ilerlemeYazi').textContent = `${kontrol} / ${mevcut} öğrenci kontrol edildi`;
@@ -577,12 +577,50 @@ function islemYap(o, i) {
   }
   if (i === 'duzelt') return duzenAc(o);
   if (i === 'ayril') { aktif = o; $('ayrilAd').textContent = `${o.ad} · No: ${o.no}`; ac('perdeAyril'); return; }
-  if (i === 'geri') return guncelle(o, { durum: o.oncekiDurum && o.oncekiDurum !== 'ayrildi' ? o.oncekiDurum : 'bekliyor', oncekiDurum: null }, 'Geri alındı');
+  if (i === 'geri') return geriAl(o);
+}
+async function geriAl(o) {
+  try {
+    const h = (await numaraKontrol(o.no, o.id)) || (await numaraAyir(o.no, o.id));
+    if (h) { tost(`Geri alınamadı: ${o.no} numarası artık başka bir öğrencide. Yöneticiye bildirin.`, 'hata'); return; }
+  } catch (err) { tost(hataMesaji(err), 'hata'); return; }
+  guncelle(o, { durum: o.oncekiDurum && o.oncekiDurum !== 'ayrildi' ? o.oncekiDurum : 'bekliyor', oncekiDurum: null }, 'Geri alındı');
+}
+
+// ---------- Okul numarası kilidi (okul genelinde tekil) ----------
+let numaraIndeks = true;   // Firestore kuralları henüz güncellenmediyse yalnızca sınıf içi kontrol yapılır
+const yetkiHatasi = err => String(err?.code || '').includes('permission-denied');
+/** Numara okulda başka öğrencideyse hata mesajı döner, uygunsa null. */
+async function numaraKontrol(no, ogrId) {
+  if (!no) return null;
+  if (ogrenciler.some(x => x.id !== ogrId && x.no === no && x.durum !== 'ayrildi')) return 'Bu numara sınıfta başka bir öğrencide kayıtlı';
+  if (!numaraIndeks) return null;
+  try {
+    const s = await getDoc(doc(db, 'numaralar', no));
+    if (!s.exists()) return null;
+    const d = s.data();
+    if (d.id === ogrId) return null;
+    if (d.sk !== sk) return `Bu numara okulda ${subeAdi(d.sk)} şubesinde kayıtlı. Numarayı kontrol edin.`;
+    return null;   // kendi şubemizde eski/boşa düşmüş kayıt: üzerine yazılabilir
+  } catch (err) {
+    if (yetkiHatasi(err)) { numaraIndeks = false; console.warn('numaralar koleksiyonuna erişilemedi — firestore.rules güncellenmeli'); return null; }
+    throw err;
+  }
+}
+/** Numarayı bu öğrenci adına ayırır. Başka şube aynı anda almışsa hata mesajı döner. */
+async function numaraAyir(no, ogrId) {
+  if (!no || !numaraIndeks) return null;
+  try { await setDoc(doc(db, 'numaralar', no), { sk, id: ogrId }); return null; }
+  catch (err) { if (yetkiHatasi(err)) return 'Bu numara okulda başka bir şubede kayıtlı. Numarayı kontrol edin.'; throw err; }
+}
+async function numaraBirak(no, ogrId) {
+  if (!no || !numaraIndeks) return;
+  try { const s = await getDoc(doc(db, 'numaralar', no)); if (s.exists() && s.data().id === ogrId) await deleteDoc(s.ref); } catch {}
 }
 
 // ---------- Kaydetme ----------
 async function guncelle(o, degisim, mesaj, islem) {
-  if (sube.kilitli) return;
+  if (sube.kilitli) return false;
   const eski = { ...o };
   Object.assign(o, degisim);
   ciz();
@@ -590,9 +628,11 @@ async function guncelle(o, degisim, mesaj, islem) {
     await updateDoc(doc(db, 'ogrenciler', o.id), { ...degisim, guncel: serverTimestamp() });
     if (mesaj) tost(mesaj, 'tamam');
     kayit(islem || degisim.durum, o, eski);
+    return true;
   } catch (err) {
     Object.keys(o).forEach(k => delete o[k]); Object.assign(o, eski); ciz();
     tost(hataMesaji(err), 'hata');
+    return false;
   }
 }
 function kayit(islem, o, eski) {
@@ -608,10 +648,10 @@ document.querySelectorAll('.perde').forEach(p => {
 });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.perde.acik').forEach(p => kapat(p.id)); });
 
-$('ayrilOnay').onclick = () => {
+$('ayrilOnay').onclick = async () => {
   kapat('perdeAyril');
   const o = aktif;
-  guncelle(o, { durum: 'ayrildi', oncekiDurum: o.durum }, `${o.ad} listeden çıkarıldı. “Ayrılan” filtresinden geri alabilirsiniz.`);
+  if (await guncelle(o, { durum: 'ayrildi', oncekiDurum: o.durum }, `${o.ad} listeden çıkarıldı. “Ayrılan” filtresinden geri alabilirsiniz.`)) numaraBirak(o.no, o.id);
 };
 
 function alanHata(id, m) {
@@ -665,23 +705,40 @@ $('duzenForm').addEventListener('submit', async e => {
     return;
   }
   bosOnay = false;
+  // Okul genelinde numara kontrolü: numara değiştiyse ya da yeni kayıtsa önce numara ayrılır
+  const o0 = aktif;
+  const eskiNo = o0?.no || '';
+  const yeniRef = o0 ? null : doc(collection(db, 'ogrenciler'));
+  const ogrId = o0 ? o0.id : yeniRef.id;
+  const noDegisti = !!v.no && v.no !== eskiNo;
+  if (noDegisti) {
+    const btn = $('duzenKaydet'); btn.disabled = true; btn.textContent = 'Kontrol ediliyor…';
+    let h = null;
+    try { h = (await numaraKontrol(v.no, ogrId)) || (await numaraAyir(v.no, ogrId)); }
+    catch (err) { h = hataMesaji(err); }
+    finally { btn.disabled = false; btn.textContent = 'Kaydet'; }
+    if (h) { alanHata('alanNo', h); $('fNo').focus(); return; }
+  }
   kapat('perdeDuzen');
   if (aktif) {
     const devDegisti = !!aktif.devamsiz !== dev.devamsiz;
     const alanDegisti = ['no', 'ad', 'veli', 'tel'].some(k => (v[k] || '') !== (aktif[k] || ''));
     // Yalnızca devamsızlık işaretlendiyse doğrulama durumu değişmez
     const durum = devDegisti && !alanDegisti ? aktif.durum : durumHesapla(aktif, v);
-    guncelle(aktif, { ...v, ...dev, durum }, durum === 'duzeltildi' ? 'Düzeltme kaydedildi' : 'Kaydedildi', devDegisti ? (dev.devamsiz ? 'devamsiz' : 'devamsiz-kaldir') : durum === 'yeni' ? 'yeni-duzenle' : durum);
+    const ok = await guncelle(aktif, { ...v, ...dev, durum }, durum === 'duzeltildi' ? 'Düzeltme kaydedildi' : 'Kaydedildi', devDegisti ? (dev.devamsiz ? 'devamsiz' : 'devamsiz-kaldir') : durum === 'yeni' ? 'yeni-duzenle' : durum);
+    if (ok && eskiNo && eskiNo !== v.no) numaraBirak(eskiNo, ogrId);   // eski numara serbest kalır
+    if (!ok && noDegisti) numaraBirak(v.no, ogrId);
   } else {
     const yeni = { sk, ...v, ...dev, durum: 'yeni', orj: null };
     try {
-      const ref = await addDoc(collection(db, 'ogrenciler'), { ...yeni, guncel: serverTimestamp() });
+      await setDoc(yeniRef, { ...yeni, guncel: serverTimestamp() });
+      const ref = yeniRef;
       const o = { id: ref.id, ...yeni };
       ogrenciler.push(o);
       filtre = 'tumu'; ciz();
       tost(`${v.ad} eklendi`, 'tamam');
       kayit('yeni', o, null);
-    } catch (err) { tost(hataMesaji(err), 'hata'); }
+    } catch (err) { tost(hataMesaji(err), 'hata'); if (noDegisti) numaraBirak(v.no, ogrId); }
   }
 });
 ['fNo','fAd','fVeli','fTel'].forEach(id => $(id).addEventListener('input', () => { bosOnay = false; }));
@@ -692,6 +749,7 @@ $('yeniSilBtn').onclick = async () => {
   try {
     await deleteDoc(doc(db, 'ogrenciler', o.id));
     ogrenciler = ogrenciler.filter(x => x.id !== o.id); ciz();
+    numaraBirak(o.no, o.id);
     tost('Kayıt silindi');
     kayit('yeni-sil', o, null);
   } catch (err) { tost(hataMesaji(err), 'hata'); }

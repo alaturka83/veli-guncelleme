@@ -709,10 +709,37 @@ async function yukle() {
     dinle(collection(db, 'subeler'), s => { subeler = {}; s.docs.forEach(d => subeler[d.id] = d.data()); ozelAdlariTanit(subeler); }),
     dinle(collection(db, 'ogrenciler'), s => { ogrenciler = s.docs.map(d => ({ id: d.id, ...d.data() })); }),
     dinle(doc(db, 'genel', 'ayar'), s => { ayar = s.exists() ? s.data() : {}; }),
+    dinle(collection(db, 'numaralar'), s => { numaralar = {}; s.docs.forEach(d => numaralar[d.id] = d.data()); numaraHazir = true; })
+      .catch(err => { numaraHazir = false; console.warn('numaralar okunamadı — firestore.rules güncellenmeli', err); }),
     dinle(query(collection(db, 'kayitlar'), orderBy('zaman', 'desc'), limit(40)), s => { sonKayitlar = s.docs.map(d => d.data({ serverTimestamps: 'estimate' })); }).catch(() => {}),
   ]);
 }
 
+
+// ---------- Okul numarası kilidi ----------
+// numaralar/{no} = { sk, id } — öğretmen ekranı başka şubelerin numaralarını buradan kontrol eder.
+// Yönetici paneli açıkken liste öğrenci kayıtlarıyla otomatik eşitlenir (Excel aktarımı, yedek, geçiş vb. dahil).
+let numaralar = {}, numaraHazir = false, senkronSuruyor = false, senkronZaman;
+function numaraSenkronPlanla() { if (!numaraHazir) return; clearTimeout(senkronZaman); senkronZaman = setTimeout(numaraSenkron, 1500); }
+async function numaraSenkron() {
+  if (!numaraHazir) return;
+  if (senkronSuruyor) return numaraSenkronPlanla();
+  senkronSuruyor = true;
+  try {
+    const hedef = {};
+    for (const o of ogrenciler) {
+      if (o.durum === 'ayrildi' || !o.no || !o.sk) continue;
+      if (!hedef[o.no] || numaralar[o.no]?.id === o.id) hedef[o.no] = { sk: o.sk, id: o.id };
+    }
+    const islemler = [];
+    for (const [no, v] of Object.entries(hedef)) { const m = numaralar[no]; if (!m || m.id !== v.id || m.sk !== v.sk) islemler.push(bt => bt.set(doc(db, 'numaralar', no), v)); }
+    for (const no of Object.keys(numaralar)) if (!hedef[no]) islemler.push(bt => bt.delete(doc(db, 'numaralar', no)));
+    for (let i = 0; i < islemler.length; i += 400) { const bt = writeBatch(db); islemler.slice(i, i + 400).forEach(f => f(bt)); await bt.commit(); }
+  } catch (err) { console.error('Numara eşitleme hatası:', err); }
+  finally { senkronSuruyor = false; }
+}
+/** Aynı numara başka aktif öğrencide mi? */
+const numaraSahibi = (no, id) => no ? ogrenciler.find(x => x.id !== id && x.no === no && x.durum !== 'ayrildi') : null;
 
 // ================= SEKME =================
 let sekme = 'pano';
@@ -738,7 +765,7 @@ const devamsizMi = o => o.durum !== 'ayrildi' && !!o.devamsiz;
 function subeOzet(sk) {
   const l = ogrenciler.filter(o => o.sk === sk);
   const r = { toplam: l.length, mevcut: 0, bekliyor: 0, dogru: 0, duzeltildi: 0, ayrildi: 0, yeni: 0, eksik: 0, devamsiz: 0 };
-  for (const o of l) { r[o.durum] = (r[o.durum] || 0) + 1; if (o.durum !== 'ayrildi') r.mevcut++; if (eksikMi(o)) r.eksik++; if (devamsizMi(o)) r.devamsiz++; }
+  for (const o of l) { r[o.durum] = (r[o.durum] || 0) + 1; if (o.durum !== 'yeni') r.mevcut++; if (eksikMi(o)) r.eksik++; if (devamsizMi(o)) r.devamsiz++; }
   r.kontrol = r.mevcut - r.bekliyor;
   r.yuzde = r.mevcut ? Math.round(r.kontrol / r.mevcut * 100) : 0;
   r.guncel = r.toplam - r.ayrildi;
@@ -749,7 +776,7 @@ function subeOzet(sk) {
 function genelOzet() {
   const r = { toplam: ogrenciler.length, bekliyor: 0, dogru: 0, duzeltildi: 0, ayrildi: 0, yeni: 0, eksik: 0, devamsiz: 0 };
   for (const o of ogrenciler) { r[o.durum] = (r[o.durum] || 0) + 1; if (eksikMi(o)) r.eksik++; if (devamsizMi(o)) r.devamsiz++; }
-  const mevcut = r.toplam - r.ayrildi;
+  const mevcut = r.toplam - r.yeni;
   r.yuzde = mevcut ? Math.round((mevcut - r.bekliyor) / mevcut * 100) : 0;
   const sk = tumSkler();
   r.subeSayi = sk.length;
@@ -768,6 +795,7 @@ function ciz() {
   if (sekme === 'degisim') cizDegisim();
   if (sekme === 'sube') cizSube();
   if (sekme === 'kurulum') cizKurulum();
+  numaraSenkronPlanla();
 }
 
 function cizPano(g) {
@@ -806,7 +834,10 @@ function cizPano(g) {
   const telSay = {}; aktifler.forEach(o => { if (o.tel) (telSay[o.tel] ||= []).push(o); });
   const baslamayan = sk.filter(s => subeOzet(s).durum === 'baslamadi');
   const u = [];
-  if (tekrar.length) u.push(`<div class="uyari-kutu">⚠ <b>${tekrar.length}</b> okul numarası birden fazla öğrencide: ${tekrar.slice(0, 6).map(l => `${esc(l[0].no)} (${l.map(o => subeAdi(o.sk)).join(', ')})`).join(' · ')}${tekrar.length > 6 ? ' …' : ''}</div>`);
+  tekrar.sort((a, b) => Number(a[0].no) - Number(b[0].no));
+  if (tekrar.length) u.push(`<div class="hata-kutu">⚠ <b>${tekrar.length}</b> okul numarası birden fazla öğrencide kayıtlı. Okul numarası her öğrencide farklı olmalıdır; yanlış olan kaydın numarasını değiştirin. Düzenlemek için öğrencinin adına tıklayın:
+    <div style="margin-top:8px;font-weight:500;line-height:1.7">${tekrar.slice(0, 20).map(l => `<div>• <b>No ${esc(l[0].no)}</b> → ${l.map(o => `<a href="#" data-ogr="${o.id}" style="color:inherit">${esc(o.ad)} (${subeAdi(o.sk)})</a>`).join(', ')}</div>`).join('')}${tekrar.length > 20 ? `<div>… ve ${tekrar.length - 20} numara daha</div>` : ''}</div></div>`);
+  if (!numaraHazir && ogrenciler.length) u.push(`<div class="uyari-kutu">⚠ Okul numarası kilidi çalışmıyor: Firestore kurallarını güncel <b>firestore.rules</b> dosyasıyla yeniden yayınlayın. O zamana kadar öğretmenler yalnızca kendi sınıflarında numara tekrarını görebilir.</div>`);
   if (g.eksik) u.push(`<div style="margin-bottom:8px">• <b>${g.eksik}</b> öğrencinin telefonu ya da veli adı eksik. <a href="#" data-git="eksik">Listele</a></div>`);
   const cokTel = Object.values(telSay).filter(l => l.length > 3);
   if (cokTel.length) u.push(`<div style="margin-bottom:8px">• ${cokTel.length} telefon numarası 3’ten fazla öğrencide kayıtlı (hatalı giriş olabilir): ${cokTel.slice(0,4).map(l => telGoster(l[0].tel)).join(', ')}</div>`);
@@ -836,6 +867,8 @@ $('istat').addEventListener('click', e => {
   $('oSube').value = ''; $('oDurum').value = v || ''; $('oAra').value = ''; oLimit = 400; sekmeAc('ogrenci');
 });
 $('uyarilar').addEventListener('click', e => {
+  const og = e.target.closest('[data-ogr]');
+  if (og) { e.preventDefault(); const o = ogrenciler.find(x => x.id === og.dataset.ogr); if (o) ogrAc(o); return; }
   const a = e.target.closest('[data-git]'); if (!a) return; e.preventDefault();
   $('oSube').value = ''; $('oDurum').value = a.dataset.git; sekmeAc('ogrenci');
 });
@@ -959,7 +992,7 @@ $('ogrForm').addEventListener('submit', async e => {
   let h = false;
   ['aSube','aNo','aAd','aVeli','aTel'].forEach(a => alanHata(a, ''));
   if (!v.sk) { alanHata('aSube', 'Şube seçin'); h = true; }
-  if (v.no) { const t = ogrenciler.find(x => x.id !== aktif?.id && x.no === v.no && x.durum !== 'ayrildi'); if (t) { alanHata('aNo', `Bu numara ${subeAdi(t.sk)} şubesinde ${t.ad} adına kayıtlı`); h = true; } }
+  if (v.no && (!aktif || aktif.durum !== 'ayrildi')) { const t = numaraSahibi(v.no, aktif?.id); if (t) { alanHata('aNo', `Bu numara ${subeAdi(t.sk)} şubesinde ${t.ad} adına kayıtlı`); h = true; } }
   if (v.ad.length < 3) { alanHata('aAd', 'Ad soyad gerekli'); h = true; }
   if (v.tel && !telGecerli(v.tel)) { alanHata('aTel', '5 ile başlayan 10 hane olmalı'); h = true; }
   if (h) return;
@@ -982,11 +1015,15 @@ $('fTel').addEventListener('blur', () => { const t = telTemizle($('fTel').value)
 $('fDevamsiz').addEventListener('change', () => $('aDevNot').classList.toggle('gizli', !$('fDevamsiz').checked));
 $('ogrAyril').onclick = async () => {
   const o = aktif; kapat('perdeOgr');
+  if (o.durum === 'ayrildi') { const t = numaraSahibi(o.no, o.id); if (t) return tost(`Geri alınamadı: ${o.no} numarası ${subeAdi(t.sk)} şubesinde ${t.ad} adına kayıtlı. Önce numarayı değiştirin.`, 'hata'); }
   if (o.durum === 'ayrildi') await ogrGuncelle(o, { durum: o.oncekiDurum && o.oncekiDurum !== 'ayrildi' ? o.oncekiDurum : 'bekliyor', oncekiDurum: null }, 'bekliyor');
   else await ogrGuncelle(o, { durum: 'ayrildi', oncekiDurum: o.durum }, 'ayrildi');
 };
 $('ogrOrj').onclick = async () => {
-  const o = aktif; kapat('perdeOgr');
+  const o = aktif;
+  const t = o.durum !== 'ayrildi' && numaraSahibi(o.orj.no, o.id);
+  if (t) return tost(`İlk kayda dönülemez: ${o.orj.no} numarası ${subeAdi(t.sk)} şubesinde ${t.ad} adına kayıtlı.`, 'hata');
+  kapat('perdeOgr');
   await ogrGuncelle(o, { sk: o.orj.sk || o.sk, no: o.orj.no, ad: o.orj.ad, veli: o.orj.veli, tel: o.orj.tel, durum: 'bekliyor' }, 'yonetici-duzenle');
 };
 $('ogrSil').onclick = async () => {
@@ -1276,6 +1313,8 @@ $('excelDosya').addEventListener('change', async e => {
     const sube = {}; kayit.forEach(k => sube[k.sk] = (sube[k.sk] || 0) + 1);
     const telYok = kayit.filter(k => !k.tel).length, veliYok = kayit.filter(k => !k.veli).length, telHatali = kayit.filter(k => k.telHatali).length;
     const tanimsizSay = Object.values(tanimsiz).reduce((a, b) => a + b, 0);
+    const dosyaNo = {}; kayit.forEach(k => { if (k.no) (dosyaNo[k.no] ||= []).push(k); });
+    const dosyaTekrar = Object.values(dosyaNo).filter(l => l.length > 1);
     if (!kayit.length) {
       $('onizleme').innerHTML = `<div class="hata-kutu" style="margin-top:12px">Aktarılacak öğrenci bulunamadı. ${Object.keys(subeler).length ? 'Excel’deki şubelerin hiçbiri sistemde tanımlı değil.' : 'Önce 1. adımda şubeleri oluşturun.'}</div>`;
       return;
@@ -1283,6 +1322,7 @@ $('excelDosya').addEventListener('change', async e => {
     $('onizleme').innerHTML = `<div class="bilgi-kutu" style="margin-top:12px">
       <b>${kayit.length}</b> öğrenci · <b>${Object.keys(sube).length}</b> şube aktarılmaya hazır. ${baslik ? `${baslik} başlık satırı atlandı.` : ''}<br>
       Telefonu boş: ${telYok} · Veli adı boş: ${veliYok}${telHatali ? ` · <b>Hatalı telefon: ${telHatali}</b> (yine de aktarılır, öğretmen düzeltir)` : ''}</div>
+      ${dosyaTekrar.length ? `<div class="uyari-kutu">⚠ Dosyada <b>${dosyaTekrar.length}</b> okul numarası birden fazla öğrencide: ${dosyaTekrar.slice(0, 8).map(l => `${esc(l[0].no)} (${l.map(k => `${esc(k.ad)} – ${subeAdi(k.sk)}`).join(', ')})`).join(' · ')}${dosyaTekrar.length > 8 ? ' …' : ''}<br><span style="font-weight:500">Excel’de düzeltip dosyayı yeniden seçmeniz önerilir. Böyle aktarırsanız bu kayıtlar Pano’daki “Dikkat edilecekler” bölümünde listelenir.</span></div>` : ''}
       ${tanimsizSay ? `<div class="uyari-kutu">⚠ Sistemde tanımlı olmayan şubelere ait <b>${tanimsizSay}</b> öğrenci aktarılmayacak: ${Object.entries(tanimsiz).map(([e, n]) => `${esc(e)} (${n})`).join(', ')}.<br><span style="font-weight:500">Bu öğrencilerin de aktarılmasını istiyorsanız önce 1. adımda o şubeleri oluşturup dosyayı yeniden seçin.</span></div>` : ''}
       <div style="font-size:13px;color:var(--soluk);margin-bottom:10px">${Object.entries(sube).sort((a, b) => subeSira(a[0], b[0])).map(([s, n]) => `${subeAdi(s)}: ${n}`).join(' · ')}</div>
       ${ogrenciler.length ? `<div class="kutu" style="box-shadow:none;border:1.5px solid var(--cizgi);padding:12px;margin:0 0 12px">

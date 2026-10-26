@@ -59,6 +59,18 @@ service cloud.firestore {
         && resource.data.durum == 'yeni');
     }
 
+    // Okul numarası kilidi: belge adı = okul numarası, içerik = { sk, id }.
+    // Aynı numara iki öğrencide olamaz: başka şubenin aldığı numaraya öğretmen yazamaz.
+    // Öğretmen tek numarayı sorgulayabilir (get) ama listenin tamamını göremez.
+    match /numaralar/{no} {
+      allow get: if girisli();
+      allow list: if yonetici();
+      allow create: if yonetici() || (ogretmen() && subeAcik() && request.resource.data.sk == benimSube());
+      allow update: if yonetici() || (ogretmen() && subeAcik()
+        && resource.data.sk == benimSube() && request.resource.data.sk == benimSube());
+      allow delete: if yonetici() || (ogretmen() && subeAcik() && resource.data.sk == benimSube());
+    }
+
     // İşlem geçmişi: öğretmen kendi şubesi için yazar, yalnızca yönetici okur
     match /kayitlar/{id} {
       allow create: if yonetici() || (ogretmen() && request.resource.data.sk == benimSube());
